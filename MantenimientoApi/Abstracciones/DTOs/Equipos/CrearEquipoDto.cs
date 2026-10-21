@@ -9,6 +9,7 @@ public class CrearEquipoDto
 {
     [Required(ErrorMessage = "El código de equipo es obligatorio.")]
     [StringLength(50, MinimumLength = 3, ErrorMessage = "El código debe tener entre 3 y 50 caracteres.")]
+    [Abstracciones.Validaciones.CodigoFormato]
     public string CodigoEquipo { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El nombre del equipo es obligatorio.")]

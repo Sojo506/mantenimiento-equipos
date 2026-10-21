@@ -9,6 +9,7 @@ public class CrearRepuestoDto
 {
     [Required(ErrorMessage = "El código del repuesto es obligatorio.")]
     [StringLength(50, MinimumLength = 3, ErrorMessage = "El código debe tener entre 3 y 50 caracteres.")]
+    [Abstracciones.Validaciones.CodigoFormato]
     public string CodigoRepuesto { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El nombre del repuesto es obligatorio.")]

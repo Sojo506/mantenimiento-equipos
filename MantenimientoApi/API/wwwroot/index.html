@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de Gestión de Mantenimiento de Equipos - REST API v1. Universidad Fidélitas SC-701.">
+    <title>Mantenimiento API | Sistema de Gestión Empresarial</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0d14;
+            --bg-secondary: #121722;
+            --bg-card: rgba(22, 28, 42, 0.75);
+            --bg-card-hover: rgba(28, 36, 54, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(99, 102, 241, 0.4);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-indigo: #6366f1;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+            --gradient-glow: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: var(--gradient-glow);
+            background-repeat: no-repeat;
+            background-size: 100% 600px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 3rem;
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--gradient-primary);
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: white;
+            box-shadow: 0 0 24px rgba(99, 102, 241, 0.5);
+        }
+
+        .logo-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-title span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.85rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 9999px;
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: var(--accent-emerald);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-emerald);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: var(--accent-emerald);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        .hero {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 3.5rem auto;
+        }
+
+        .pill-label {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            color: #818cf8;
+            padding: 0.3rem 0.9rem;
+            border-radius: 9999px;
+            margin-bottom: 1.25rem;
+        }
+
+        .hero h2 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.25rem;
+            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(8px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(12px);
+            transition: all 0.25s ease;
+        }
+
+        .metric-card:hover {
+            border-color: var(--border-highlight);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .metric-sub {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .modules-section {
+            margin-bottom: 3.5rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.75rem;
+            backdrop-filter: blur(12px);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--gradient-primary);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-highlight);
+            background: var(--bg-card-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .card-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+        }
+
+        .endpoint-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .http-method {
+            font-weight: 700;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .get { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
+        .post { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+        .put { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
+
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 2.5rem 0 1rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .footer-tech {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-group">
+                <div class="logo-icon">M</div>
+                <div class="logo-title">
+                    <h1>MantenimientoApi</h1>
+                    <span>Backend Industrial v1.0 • .NET 10</span>
+                </div>
+            </div>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span>Servicio Operativo</span>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div class="pill-label">Universidad Fidélitas • Avance 1 (Semana 7)</div>
+            <h2>Gestión Empresarial de Mantenimiento de Equipos</h2>
+            <p>API RESTful de alto rendimiento diseñada con Clean Architecture de 4 capas, EF Core 10, OpenAPI, concurrencia optimista y trazabilidad inmutable.</p>
+            <div class="cta-buttons">
+                <a href="/scalar/v1" id="btn-scalar-docs" class="btn btn-primary">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    Explorador Interactivo Scalar
+                </a>
+                <a href="/openapi/v1.json" id="btn-openapi-spec" target="_blank" class="btn btn-secondary">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                    Especificación OpenAPI JSON
+                </a>
+            </div>
+        </section>
+
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Arquitectura</div>
+                <div class="metric-value">4 Capas</div>
+                <div class="metric-sub">Abstracciones, DA, Flujo, API</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Entidades Mapeadas</div>
+                <div class="metric-value">13 Tablas</div>
+                <div class="metric-sub">Modelo relacional en 3FN con Fluent API</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Semilla Inicial</div>
+                <div class="metric-value">32 Órdenes</div>
+                <div class="metric-sub">Equipos, repuestos, usuarios y catálogo</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Concurrencia</div>
+                <div class="metric-value">Optimista</div>
+                <div class="metric-sub">RowVersion / ETag en Repuestos y Órdenes</div>
+            </div>
+        </section>
+
+        <section class="modules-section">
+            <h2 class="section-title">
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--accent-indigo);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                Módulos Principales (CRUD & Lógica de Negocio)
+            </h2>
+            <div class="modules-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-tag">EQUIPOS</span>
+                    </div>
+                    <h3>Parque de Equipos</h3>
+                    <p>Gestión del ciclo de vida de activos industriales, estados operativos, paginación con X-Pagination y caché HTTP 304 Not Modified.</p>
+                    <div class="endpoint-chip">
+                        <span class="http-method get">GET</span>
+                        <span>/api/equipos?busqueda=&pagina=1</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-tag">REPUESTOS</span>
+                    </div>
+                    <h3>Inventario & Bodega</h3>
+                    <p>Control de existencias con alertas de stock mínimo, validación de concurrencia optimista y actualización transaccional.</p>
+                    <div class="endpoint-chip">
+                        <span class="http-method get">GET</span>
+                        <span>/api/repuestos/bajo-minimo</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-tag">ORDENES</span>
+                    </div>
+                    <h3>Órdenes de Trabajo</h3>
+                    <p>Máquina de estados estricta (Abierta &rarr; En Diagnóstico &rarr; En Proceso &rarr; Terminada/Cerrada), deducción de repuestos y bitácora inmutable.</p>
+                    <div class="endpoint-chip">
+                        <span class="http-method put">PUT</span>
+                        <span>/api/ordenes/{numero}/estado</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div>
+                <strong>SC-701 Programación Avanzada Web</strong> — Proyecto Final • Estudiante: <strong>Fabián Sojo</strong>
+            </div>
+            <div class="footer-tech">
+                <span>.NET 10.0</span>
+                <span>•</span>
+                <span>EF Core 10</span>
+                <span>•</span>
+                <span>Scalar API Reference</span>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

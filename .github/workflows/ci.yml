@@ -1,0 +1,30 @@
+name: CI - Integración Continua
+
+on:
+  push:
+    branches: [ main, sojo ]
+  pull_request:
+    branches: [ main, sojo ]
+
+jobs:
+  build-and-test:
+    name: Compilación y Pruebas Unitarias
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Descargar código fuente (Checkout)
+      uses: actions/checkout@v4
+
+    - name: Configurar entorno .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restaurar dependencias NuGet
+      run: dotnet restore MantenimientoApi/MantenimientoApi.slnx
+
+    - name: Compilar solución en modo Release
+      run: dotnet build MantenimientoApi/MantenimientoApi.slnx --no-restore --configuration Release
+
+    - name: Ejecutar pruebas unitarias
+      run: dotnet test MantenimientoApi/MantenimientoApi.slnx --no-build --configuration Release --verbosity normal

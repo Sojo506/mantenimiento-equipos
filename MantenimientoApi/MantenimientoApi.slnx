@@ -2,7 +2,6 @@
   <Project Path="Abstracciones/Abstracciones.csproj" />
   <Project Path="API/API.csproj" />
   <Project Path="DA/DA.csproj" />
-  <Project Path="Flujo/Flujo.csproj" />
   <Project Path="Flujo.Tests/Flujo.Tests.csproj" />
-  <Project Path="Web/Web.csproj" Id="b405a4e6-f7d4-4765-bfe8-33419a1dd90e" />
+  <Project Path="Flujo/Flujo.csproj" />
 </Solution>

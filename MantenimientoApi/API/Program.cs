@@ -1,32 +1,54 @@
-using System.Text.Json.Serialization;
+
 using API.Middleware;
 using API.Restricciones;
 using DA;
 using Flujo;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuración de serialización JSON y controladores
+// ==========================================
+// CONTROLADORES Y JSON
+// ==========================================
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.ReferenceHandler =
+            ReferenceHandler.IgnoreCycles;
+
+        options.JsonSerializerOptions.DefaultIgnoreCondition =
+            JsonIgnoreCondition.WhenWritingNull;
     });
 
-// Restricción de ruta personalizada para códigos de equipo y repuesto
+// ==========================================
+// CONFIGURACIÓN DE RUTAS
+// ==========================================
+
 builder.Services.Configure<RouteOptions>(options =>
 {
-    options.ConstraintMap.Add("codigoRuta", typeof(CodigoRutaConstraint));
+    options.ConstraintMap.Add(
+        "codigoRuta",
+        typeof(CodigoRutaConstraint));
 });
 
-// Manejo global de excepciones RFC 7807 ProblemDetails
+// ==========================================
+// MANEJO GLOBAL DE ERRORES
+// ==========================================
+
 builder.Services.AddExceptionHandler<ManejadorExcepcionesGlobal>();
 builder.Services.AddProblemDetails();
 
-// Política CORS permisiva para desarrollo y consumo del frontend MVC
+// ==========================================
+// CORS
+// ==========================================
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("PermitirTodo", policy =>
@@ -38,125 +60,155 @@ builder.Services.AddCors(options =>
     });
 });
 
-// OpenAPI y documentación interactiva
-builder.Services.AddOpenApi();
+// ==========================================
+// CONFIGURACIÓN JWT
+// ==========================================
 
-// Registro de dependencias de la capa de acceso a datos (DA)
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+
+var secretKey = jwtSettings["SecretKey"];
+var issuer = jwtSettings["Issuer"];
+var audience = jwtSettings["Audience"];
+
+if (string.IsNullOrWhiteSpace(secretKey))
+{
+    throw new InvalidOperationException(
+        "No se encontró JwtSettings:SecretKey en la configuración.");
+}
+
+if (Encoding.UTF8.GetByteCount(secretKey) < 32)
+{
+    throw new InvalidOperationException(
+        "La clave JWT debe tener al menos 32 bytes.");
+}
+
+if (string.IsNullOrWhiteSpace(issuer))
+{
+    throw new InvalidOperationException(
+        "No se encontró JwtSettings:Issuer en la configuración.");
+}
+
+if (string.IsNullOrWhiteSpace(audience))
+{
+    throw new InvalidOperationException(
+        "No se encontró JwtSettings:Audience en la configuración.");
+}
+
+var signingKey = new SymmetricSecurityKey(
+    Encoding.UTF8.GetBytes(secretKey));
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme =
+        JwtBearerDefaults.AuthenticationScheme;
+
+    options.DefaultChallengeScheme =
+        JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = issuer,
+
+        ValidateAudience = true,
+        ValidAudience = audience,
+
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = signingKey,
+
+        RoleClaimType = ClaimTypes.Role,
+        NameClaimType = ClaimTypes.Name,
+
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
+
+// ==========================================
+// CONFIGURACIÓN OPENAPI
+// ==========================================
+
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Components ??= new OpenApiComponents();
+
+        document.Components.SecuritySchemes ??=
+            new Dictionary<string, IOpenApiSecurityScheme>();
+
+        var bearerScheme = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Ingresa el token JWT."
+        };
+
+        document.Components.SecuritySchemes["Bearer"] = bearerScheme;
+
+        return Task.CompletedTask;
+    });
+});
+
+// ==========================================
+// REGISTRO DE CAPAS
+// ==========================================
+
 builder.Services.AgregarCapaDatos(builder.Configuration);
-
-// Registro de dependencias de la capa de lógica de negocio (Flujo)
 builder.Services.AgregarCapaFlujo(builder.Configuration);
+
+// ==========================================
+// CONSTRUCCIÓN DE LA APLICACIÓN
+// ==========================================
 
 var app = builder.Build();
 
-// Pipeline de manejo de errores
+// ==========================================
+// MIDDLEWARE
+// ==========================================
+
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
-// Archivos estáticos y página de inicio
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.UseCors("PermitirTodo");
 
-// Documentación de OpenAPI y Scalar
+// ==========================================
+// OPENAPI Y SCALAR
+// ==========================================
+
 app.MapOpenApi();
+
 app.MapScalarApiReference(options =>
 {
     options.WithTitle("Mantenimiento API — Sistema de Gestión")
            .WithTheme(ScalarTheme.DeepSpace);
 });
 
-// -------------------------------------------------------------
-// ENDPOINTS DE TABLERO Y MÉTRICAS (Minimal APIs)
-// -------------------------------------------------------------
 
-var grupoTablero = app.MapGroup("/api/tablero")
-    .WithTags("Tablero de Control");
+// ==========================================
+// AUTENTICACIÓN Y AUTORIZACIÓN
+// ==========================================
 
-grupoTablero.MapGet("/equipos-por-estado", async (MantenimientoDbContext db, CancellationToken ct) =>
-{
-    var resultado = await db.Equipos
-        .AsNoTracking()
-        .GroupBy(e => new { e.IdEstado, e.Estado!.Nombre })
-        .Select(g => new
-        {
-            g.Key.IdEstado,
-            Estado = g.Key.Nombre,
-            Cantidad = g.Count()
-        })
-        .ToListAsync(ct);
-
-    return Results.Ok(resultado);
-})
-.WithName("ObtenerEquiposPorEstado")
-.WithSummary("Obtiene el conteo consolidado de equipos agrupados por estado operativo.")
-.Produces(StatusCodes.Status200OK);
-
-grupoTablero.MapGet("/ordenes-por-prioridad", async (MantenimientoDbContext db, CancellationToken ct) =>
-{
-    var resultado = await db.OrdenesDeTrabajo
-        .AsNoTracking()
-        .GroupBy(o => o.Prioridad)
-        .Select(g => new
-        {
-            Prioridad = g.Key,
-            Total = g.Count(),
-            Activas = g.Count(o => o.IdEstado != 11 && o.IdEstado != 10)
-        })
-        .ToListAsync(ct);
-
-    return Results.Ok(resultado);
-})
-.WithName("ObtenerOrdenesPorPrioridad")
-.WithSummary("Obtiene la distribución de órdenes de trabajo agrupadas por prioridad y estado activo.")
-.Produces(StatusCodes.Status200OK);
-
-grupoTablero.MapGet("/repuestos-bajo-minimo", async (MantenimientoDbContext db, CancellationToken ct) =>
-{
-    var criticos = await db.Repuestos
-        .AsNoTracking()
-        .Where(r => r.Stock <= r.StockMinimo)
-        .Select(r => new
-        {
-            r.CodigoRepuesto,
-            r.Nombre,
-            r.Stock,
-            r.StockMinimo,
-            Deficit = r.StockMinimo - r.Stock,
-            r.CostoUnitario
-        })
-        .ToListAsync(ct);
-
-    return Results.Ok(new
-    {
-        TotalCriticos = criticos.Count,
-        Items = criticos
-    });
-})
-.WithName("ObtenerRepuestosBajoMinimo")
-.WithSummary("Consulta los repuestos que se encuentran en estado crítico de existencias (stock <= mínimo).")
-.Produces(StatusCodes.Status200OK);
-
-// Endpoint de diagnóstico y salud del servicio
-app.MapGet("/api/salud", async (MantenimientoDbContext db, CancellationToken ct) =>
-{
-    bool baseDatosConectada = await db.Database.CanConnectAsync(ct);
-
-    return Results.Ok(new
-    {
-        Estado = "Operativo",
-        Version = "1.0.0 (Avance 1)",
-        BaseDatos = baseDatosConectada ? "Conectada" : "Desconectada",
-        FechaUtc = DateTime.UtcNow,
-        Entorno = app.Environment.EnvironmentName
-    });
-})
-.WithTags("Diagnóstico")
-.WithSummary("Verifica el estado de operatividad de la API y la conectividad con la base de datos.");
-
+app.UseAuthentication();
 app.UseAuthorization();
 
+// ==========================================
+// CONTROLADORES
+// ==========================================
+
 app.MapControllers();
+
+// ==========================================
+// INICIO
+// ==========================================
 
 app.Run();

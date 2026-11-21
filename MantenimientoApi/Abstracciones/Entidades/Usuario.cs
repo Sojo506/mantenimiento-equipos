@@ -1,5 +1,7 @@
 namespace Abstracciones.Entidades;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Representa a un usuario del sistema (USUARIO_TB), unificando administradores,
 /// supervisores, solicitantes y técnicos.
@@ -21,7 +23,13 @@ public class Usuario
     public Especialidad? Especialidad { get; set; }
     public Estado? Estado { get; set; }
 
+
+    [JsonIgnore]
     public ICollection<OrdenDeTrabajo> OrdenesSolicitadas { get; set; } = new List<OrdenDeTrabajo>();
+
+    [JsonIgnore]
     public ICollection<OrdenDeTrabajo> OrdenesAsignadas { get; set; } = new List<OrdenDeTrabajo>();
+
+    [JsonIgnore]
     public ICollection<BitacoraOrden> Bitacoras { get; set; } = new List<BitacoraOrden>();
 }

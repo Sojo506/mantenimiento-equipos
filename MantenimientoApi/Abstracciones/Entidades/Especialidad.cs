@@ -1,8 +1,6 @@
-namespace Abstracciones.Entidades;
+using Abstracciones.Entidades;
+using System.Text.Json.Serialization;
 
-/// <summary>
-/// Especialidad técnica de los usuarios técnicos (ESPECIALIDAD_TB).
-/// </summary>
 public class Especialidad
 {
     public int IdEspecialidad { get; set; }
@@ -10,5 +8,7 @@ public class Especialidad
     public int IdEstado { get; set; }
 
     public Estado? Estado { get; set; }
+
+    [JsonIgnore]
     public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
 }

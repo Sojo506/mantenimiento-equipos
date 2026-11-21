@@ -1,0 +1,107 @@
+﻿
+@model Web_Mantenimiento.Models.Usuarios.CrearUsuarioViewModel
+
+@{
+    ViewData["Title"] = "Nuevo usuario";
+}
+
+<div class="mb-4">
+    <h2>Registrar usuario</h2>
+    <p class="text-muted">Complete la información del nuevo usuario.</p>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Crear" method="post">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly"
+                 class="alert alert-danger"></div>
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label asp-for="Identificacion" class="form-label">Identificación</label>
+                    <input asp-for="Identificacion" class="form-control" />
+                    <span asp-validation-for="Identificacion" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Correo" class="form-label">Correo electrónico</label>
+                    <input asp-for="Correo" class="form-control" type="email" />
+                    <span asp-validation-for="Correo" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="Nombre" class="form-label">Nombre</label>
+                    <input asp-for="Nombre" class="form-control" />
+                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="PrimerApellido" class="form-label">Primer apellido</label>
+                    <input asp-for="PrimerApellido" class="form-control" />
+                    <span asp-validation-for="PrimerApellido" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="SegundoApellido" class="form-label">Segundo apellido</label>
+                    <input asp-for="SegundoApellido" class="form-control" />
+                    <span asp-validation-for="SegundoApellido" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Password" class="form-label">Contraseña</label>
+                    <input asp-for="Password" class="form-control" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="IdTipoUsuario" class="form-label">Tipo de usuario</label>
+                    <select asp-for="IdTipoUsuario" class="form-select">
+                        <option value="">Seleccione un tipo</option>
+                        <option value="1">Administrador</option>
+                        <option value="2">Supervisor</option>
+                        <option value="3">Técnico</option>
+                        <option value="4">Solicitante</option>
+                    </select>
+                    <span asp-validation-for="IdTipoUsuario" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="IdEspecialidad" class="form-label">Especialidad</label>
+                    <input asp-for="IdEspecialidad" class="form-control"
+                           type="number" min="1" />
+                    <span asp-validation-for="IdEspecialidad" class="text-danger"></span>
+                    <small class="text-muted">Dejar vacío si no aplica.</small>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="IdEstado" class="form-label">Estado</label>
+                    <select asp-for="IdEstado" class="form-select">
+                        <option value="1">Activo</option>
+                        <option value="2">Inactivo</option>
+                    </select>
+                    <span asp-validation-for="IdEstado" class="text-danger"></span>
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    Guardar usuario
+                </button>
+
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

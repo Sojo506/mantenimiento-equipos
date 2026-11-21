@@ -1,4 +1,5 @@
 using Abstracciones.Interfaces.DA;
+using Abstracciones.Interfaces.Flujo;
 using DA.Repositorios;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -36,6 +37,9 @@ public static class RegistroDependenciasDA
         services.AddScoped<IRepositorioBitacoraOrden, RepositorioBitacoraOrden>();
         services.AddScoped<IRepositorioReportes, RepositorioReportes>();
         services.AddScoped<IRepositorioCatalogos, RepositorioCatalogos>();
+        services.AddScoped<IRepositorioTablero, RepositorioTablero>();
+        services.AddScoped<IRepositorioSalud, RepositorioSalud>();
+
 
         return services;
     }

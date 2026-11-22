@@ -59,6 +59,30 @@
                                 </li>
                             }
 
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                   asp-controller="Ordenes"
+                                   asp-action="Index">Órdenes</a>
+                            </li>
+
+                            @if (rol is "Tecnico" or "Administrador")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link"
+                                       asp-controller="Ordenes"
+                                       asp-action="BandejaTecnico">Bandeja Técnico</a>
+                                </li>
+                            }
+
+                            @if (rol is "Supervisor" or "Administrador")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link"
+                                       asp-controller="Ordenes"
+                                       asp-action="BandejaSupervisor">Bandeja Supervisor</a>
+                                </li>
+                            }
+
                             @if (rol == "Administrador")
                             {
                                 <li class="nav-item">

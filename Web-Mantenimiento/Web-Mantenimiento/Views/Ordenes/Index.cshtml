@@ -1,0 +1,112 @@
+@model Web_Mantenimiento.Models.Ordenes.OrdenListadoViewModel
+@inject Web_Mantenimiento.Services.ApiCatalogoService Catalogos
+@{
+    ViewData["Title"] = Model.Titulo;
+    var estadosOrden = (await Catalogos.ObtenerEstadosAsync())
+        .Where(e => int.TryParse(e.Value, out var id) && id is >= 7 and <= 12)
+        .ToList();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-0">@Model.Titulo</h2>
+        <p class="text-muted mb-0">@Model.Subtitulo</p>
+    </div>
+    <a asp-action="Crear" class="btn btn-primary">Nueva orden</a>
+</div>
+
+<partial name="_MensajesTempData" />
+
+<form asp-action="@Model.AccionActual" method="get" class="row g-2 mb-3">
+    <div class="col-md-3">
+        <input type="text" name="busqueda" value="@Model.Busqueda" class="form-control"
+               placeholder="N°, equipo, descripción..." />
+    </div>
+    <div class="col-md-2">
+        <select name="idEstado" class="form-select">
+            <option value="">Todos los estados</option>
+            @foreach (var est in estadosOrden)
+            {
+                <option value="@est.Value" selected="@(Model.IdEstado?.ToString() == est.Value)">@est.Text</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="prioridad" class="form-select">
+            <option value="">Toda prioridad</option>
+            @foreach (var pri in new[] { "Baja", "Media", "Alta", "Critica" })
+            {
+                <option value="@pri" selected="@(Model.Prioridad == pri)">@pri</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="ordenarPor" class="form-select">
+            <option value="" selected="@(string.IsNullOrEmpty(Model.OrdenarPor))">Número (recientes)</option>
+            <option value="numero_asc" selected="@(Model.OrdenarPor == "numero_asc")">Número (antiguas)</option>
+            <option value="limite" selected="@(Model.OrdenarPor == "limite")">Fecha límite</option>
+            <option value="prioridad" selected="@(Model.OrdenarPor == "prioridad")">Prioridad</option>
+            <option value="fecha_desc" selected="@(Model.OrdenarPor == "fecha_desc")">Creación (reciente)</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-flex gap-1">
+        <button type="submit" class="btn btn-outline-primary flex-fill">Filtrar</button>
+        <a asp-action="@Model.AccionActual" class="btn btn-outline-secondary">Limpiar</a>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (Model.Ordenes.Count == 0)
+        {
+            <p class="text-muted mb-0">No se encontraron órdenes de trabajo.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Equipo</th>
+                            <th>Tipo</th>
+                            <th>Prioridad</th>
+                            <th>Técnico</th>
+                            <th>Fecha límite</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var o in Model.Ordenes)
+                        {
+                            <tr>
+                                <td class="fw-semibold">#@o.Numero</td>
+                                <td>@o.CodigoEquipo - @o.EquipoNombre</td>
+                                <td>@o.TipoOrdenNombre</td>
+                                <td>
+                                    <span class="badge @(o.Prioridad == "Critica" ? "bg-danger" : o.Prioridad == "Alta" ? "bg-warning text-dark" : "bg-secondary")">
+                                        @o.Prioridad
+                                    </span>
+                                </td>
+                                <td>@(o.TecnicoNombre ?? "Sin asignar")</td>
+                                <td>@o.FechaLimite.ToString("yyyy-MM-dd")</td>
+                                <td><partial name="_EstadoBadge" model="o.EstadoNombre" /></td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a asp-action="Detalle" asp-route-numero="@o.Numero"
+                                           class="btn btn-sm btn-outline-primary">Gestionar</a>
+                                        <a asp-action="Bitacora" asp-route-numero="@o.Numero"
+                                           class="btn btn-sm btn-outline-dark">Bitácora</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <partial name="_Paginacion" model="Model.Paginacion" />
+        }
+    </div>
+</div>

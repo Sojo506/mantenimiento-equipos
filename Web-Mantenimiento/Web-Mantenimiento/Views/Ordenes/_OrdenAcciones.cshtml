@@ -1,0 +1,94 @@
+@model Web_Mantenimiento.Models.Ordenes.OrdenViewModel
+@inject Web_Mantenimiento.Services.ApiCatalogoService Catalogos
+@inject Web_Mantenimiento.Services.ApiRepuestoService RepuestosService
+@{
+    var estados = (await Catalogos.ObtenerEstadosAsync())
+        .Where(e => int.TryParse(e.Value, out var id) && id is >= 7 and <= 12 && id != 11 && id != Model.IdEstado)
+        .ToList();
+    var (resRepuestos, _) = await RepuestosService.ObtenerPaginadoAsync(null, "nombre", 1, 50);
+    var repuestos = (resRepuestos?.Items ?? new())
+        .Select(r => new SelectListItem($"{r.CodigoRepuesto} - {r.Nombre} (Stock: {r.Stock})", r.CodigoRepuesto))
+        .ToList();
+}
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Cambiar estado</div>
+            <div class="card-body">
+                <form asp-action="CambiarEstado" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Numero" value="@Model.Numero" />
+                    <input type="hidden" name="RowVersion" value="@Model.RowVersion" />
+
+                    <div class="mb-2">
+                        <label class="form-label">Nuevo estado</label>
+                        <select name="NuevoEstado" asp-items="estados" class="form-select" required></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Comentario</label>
+                        <textarea name="Comentario" class="form-control" rows="2" required minlength="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Actualizar estado</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Asignar repuesto</div>
+            <div class="card-body">
+                <form asp-action="AsignarRepuesto" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Numero" value="@Model.Numero" />
+
+                    <div class="mb-2">
+                        <label class="form-label">Repuesto</label>
+                        <select name="CodigoRepuesto" asp-items="repuestos" class="form-select" required>
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cantidad</label>
+                        <input type="number" name="Cantidad" value="1" min="1" max="1000" class="form-control" required />
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">Asignar repuesto</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100 border-success">
+            <div class="card-header bg-success text-white fw-semibold">Cerrar orden</div>
+            <div class="card-body">
+                <form asp-action="CambiarEstado" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Numero" value="@Model.Numero" />
+                    <input type="hidden" name="NuevoEstado" value="11" />
+                    <input type="hidden" name="RowVersion" value="@Model.RowVersion" />
+
+                    <div class="mb-2">
+                        <label class="form-label">Tiempo invertido (horas)</label>
+                        <input type="number" name="TiempoInvertidoFinal" step="0.25" min="0"
+                               value="@Model.TiempoInvertido" class="form-control" required />
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" name="SinRepuestos" value="true" id="chkSinRep" />
+                        <label class="form-check-label" for="chkSinRep">Sin repuestos utilizados</label>
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" name="JustificacionSinRepuestos" class="form-control form-control-sm"
+                               placeholder="Justificación (si no usó repuestos)" />
+                    </div>
+                    <div class="mb-3">
+                        <textarea name="Comentario" class="form-control form-control-sm" rows="2"
+                                  placeholder="Resumen de cierre..." required minlength="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm w-100">Cerrar orden</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

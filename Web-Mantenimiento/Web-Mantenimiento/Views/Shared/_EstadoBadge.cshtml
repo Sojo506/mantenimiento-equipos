@@ -1,0 +1,16 @@
+@model string?
+
+@{
+    var estado = Model ?? "Desconocido";
+    var clase = estado.Trim().ToLowerInvariant() switch
+    {
+        "activo" or "operativo" or "cerrada" => "bg-success",
+        "inactivo" or "dado de baja" => "bg-secondary",
+        "en mantenimiento" or "en proceso" or "asignada" => "bg-primary",
+        "en espera de repuesto" or "abierta" => "bg-warning text-dark",
+        "en riesgo" or "escalada" => "bg-danger",
+        _ => "bg-info text-dark"
+    };
+}
+
+<span class="badge @clase">@estado</span>

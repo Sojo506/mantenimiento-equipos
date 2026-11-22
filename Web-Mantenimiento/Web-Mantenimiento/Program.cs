@@ -43,6 +43,7 @@ builder.Services.AddHttpClient("MantenimientoApi", client =>
 })
 .AddHttpMessageHandler<JwtDelegatingHandler>();
 builder.Services.AddScoped<ApiUsuarioService>();
+builder.Services.AddScoped<ApiCatalogoService>();
 
 var app = builder.Build();
 

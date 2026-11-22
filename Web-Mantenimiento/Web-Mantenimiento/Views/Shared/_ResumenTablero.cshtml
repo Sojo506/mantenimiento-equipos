@@ -1,0 +1,144 @@
+@model Web_Mantenimiento.Models.Tablero.TableroResumenViewModel
+@{
+    var totalEquipos = Model.EquiposPorEstado.Sum(e => e.Cantidad);
+    var totalOrdenesActivas = Model.OrdenesPorPrioridad.Sum(o => o.Activas);
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-primary shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Total de equipos</div>
+                <div class="display-6 fw-bold text-primary" id="kpiTotalEquipos">@totalEquipos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-warning shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Órdenes activas</div>
+                <div class="display-6 fw-bold text-warning" id="kpiOrdenesActivas">@totalOrdenesActivas</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-danger shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Repuestos bajo stock mínimo</div>
+                <div class="display-6 fw-bold text-danger" id="kpiRepuestosCriticos">@Model.RepuestosBajoMinimo.TotalCriticos</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Equipos por estado</div>
+            <div class="card-body">
+                @if (Model.EquiposPorEstado.Count == 0)
+                {
+                    <p class="text-muted mb-0">Sin datos de equipos.</p>
+                }
+                else
+                {
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Estado</th>
+                                <th class="text-end">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.EquiposPorEstado)
+                            {
+                                <tr>
+                                    <td><partial name="_EstadoBadge" model="item.Estado" /></td>
+                                    <td class="text-end fw-semibold">@item.Cantidad</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Órdenes por prioridad</div>
+            <div class="card-body">
+                @if (Model.OrdenesPorPrioridad.Count == 0)
+                {
+                    <p class="text-muted mb-0">Sin datos de órdenes.</p>
+                }
+                else
+                {
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Prioridad</th>
+                                <th class="text-end">Activas</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.OrdenesPorPrioridad)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@item.Prioridad</td>
+                                    <td class="text-end">@item.Activas</td>
+                                    <td class="text-end">@item.Total</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                <span>Repuestos en estado crítico (bajo mínimo)</span>
+                <a asp-controller="Repuestos" asp-action="Index" asp-route-soloBajoMinimo="true"
+                   class="btn btn-sm btn-outline-danger">Ir a inventario</a>
+            </div>
+            <div class="card-body">
+                @if (Model.RepuestosBajoMinimo.Items.Count == 0)
+                {
+                    <p class="text-success mb-0">Todos los repuestos se encuentran sobre el stock mínimo.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Repuesto</th>
+                                    <th class="text-end">Stock</th>
+                                    <th class="text-end">Mínimo</th>
+                                    <th class="text-end">Déficit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model.RepuestosBajoMinimo.Items)
+                                {
+                                    <tr class="table-warning">
+                                        <td class="fw-semibold">@r.CodigoRepuesto</td>
+                                        <td>@r.Nombre</td>
+                                        <td class="text-end">@r.Stock</td>
+                                        <td class="text-end">@r.StockMinimo</td>
+                                        <td class="text-end text-danger fw-semibold">@r.Deficit</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,8 +1,59 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model Web_Mantenimiento.Models.Tablero.TableroResumenViewModel
+@{
+    ViewData["Title"] = "Tablero de Control";
+    var nombre = Context.Session.GetString("Nombre");
+    var rol = Context.Session.GetString("Rol");
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="mb-0">Tablero de Control</h2>
+        <p class="text-muted mb-0">Bienvenido, @nombre (@rol)</p>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="button" id="btnRefrescarTablero" class="btn btn-outline-primary btn-sm">
+            Actualizar métricas
+        </button>
+        <a asp-controller="Ordenes" asp-action="Crear" class="btn btn-primary btn-sm">
+            Nueva orden
+        </a>
+    </div>
 </div>
+
+<partial name="_MensajesTempData" />
+
+<div id="contenedorTablero">
+    <partial name="_ResumenTablero" model="Model" />
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById("btnRefrescarTablero")?.addEventListener("click", async () => {
+            const btn = document.getElementById("btnRefrescarTablero");
+            btn.disabled = true;
+            btn.textContent = "Actualizando...";
+            try {
+                const [jsonResp, htmlResp] = await Promise.all([
+                    fetch("@Url.Action("MetricasJson", "Tablero")"),
+                    fetch("@Url.Action("ResumenParcial", "Tablero")")
+                ]);
+                if (htmlResp.ok) {
+                    document.getElementById("contenedorTablero").innerHTML = await htmlResp.text();
+                }
+                if (jsonResp.ok) {
+                    const data = await jsonResp.json();
+                    const eq = document.getElementById("kpiTotalEquipos");
+                    const ord = document.getElementById("kpiOrdenesActivas");
+                    const rep = document.getElementById("kpiRepuestosCriticos");
+                    if (eq) eq.textContent = data.totalEquipos;
+                    if (ord) ord.textContent = data.ordenesActivas;
+                    if (rep) rep.textContent = data.repuestosCriticos;
+                }
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Actualizar métricas";
+            }
+        });
+    </script>
+}

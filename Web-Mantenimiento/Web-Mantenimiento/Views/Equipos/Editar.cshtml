@@ -1,0 +1,77 @@
+@model Web_Mantenimiento.Models.Equipos.ActualizarEquipoViewModel
+@inject Web_Mantenimiento.Services.ApiCatalogoService Catalogos
+@{
+    ViewData["Title"] = $"Editar {Model.CodigoEquipo}";
+    var tiposEquipo = await Catalogos.ObtenerTiposEquipoAsync();
+    var marcas = await Catalogos.ObtenerMarcasAsync();
+    var modelos = await Catalogos.ObtenerModelosAsync();
+    var ubicaciones = await Catalogos.ObtenerUbicacionesAsync();
+    var estados = (await Catalogos.ObtenerEstadosAsync())
+        .Where(e => int.TryParse(e.Value, out var id) && id is >= 3 and <= 6)
+        .ToList();
+}
+
+<h2 class="mb-3">Editar equipo @Model.CodigoEquipo</h2>
+<partial name="_MensajesTempData" />
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Editar" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="CodigoEquipo" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="CodigoEquipo" class="form-label"></label>
+                    <input value="@Model.CodigoEquipo" class="form-control" disabled />
+                </div>
+
+                <div class="col-md-8">
+                    <label asp-for="Nombre" class="form-label"></label>
+                    <input asp-for="Nombre" class="form-control" />
+                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="IdTipoEquipo" class="form-label"></label>
+                    <select asp-for="IdTipoEquipo" asp-items="tiposEquipo" class="form-select"></select>
+                    <span asp-validation-for="IdTipoEquipo" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="IdMarca" class="form-label"></label>
+                    <select asp-for="IdMarca" asp-items="marcas" class="form-select"></select>
+                    <span asp-validation-for="IdMarca" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="IdModelo" class="form-label"></label>
+                    <select asp-for="IdModelo" asp-items="modelos" class="form-select"></select>
+                    <span asp-validation-for="IdModelo" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="IdUbicacion" class="form-label"></label>
+                    <select asp-for="IdUbicacion" asp-items="ubicaciones" class="form-select"></select>
+                    <span asp-validation-for="IdUbicacion" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="IdEstado" class="form-label"></label>
+                    <select asp-for="IdEstado" asp-items="estados" class="form-select"></select>
+                    <span asp-validation-for="IdEstado" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Actualizar</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,91 @@
+@model Web_Mantenimiento.Models.Equipos.CrearEquipoViewModel
+@inject Web_Mantenimiento.Services.ApiCatalogoService Catalogos
+@{
+    ViewData["Title"] = "Nuevo equipo";
+    var tiposEquipo = await Catalogos.ObtenerTiposEquipoAsync();
+    var marcas = await Catalogos.ObtenerMarcasAsync();
+    var modelos = await Catalogos.ObtenerModelosAsync();
+    var ubicaciones = await Catalogos.ObtenerUbicacionesAsync();
+    var estados = (await Catalogos.ObtenerEstadosAsync())
+        .Where(e => int.TryParse(e.Value, out var id) && id is >= 3 and <= 6)
+        .ToList();
+}
+
+<h2 class="mb-3">Registrar equipo</h2>
+<partial name="_MensajesTempData" />
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Crear" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="CodigoEquipo" class="form-label"></label>
+                    <input asp-for="CodigoEquipo" class="form-control" placeholder="EQ-001" />
+                    <span asp-validation-for="CodigoEquipo" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-8">
+                    <label asp-for="Nombre" class="form-label"></label>
+                    <input asp-for="Nombre" class="form-control" />
+                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="IdTipoEquipo" class="form-label"></label>
+                    <select asp-for="IdTipoEquipo" asp-items="tiposEquipo" class="form-select">
+                        <option value="">-- Seleccione --</option>
+                    </select>
+                    <span asp-validation-for="IdTipoEquipo" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="IdMarca" class="form-label"></label>
+                    <select asp-for="IdMarca" asp-items="marcas" class="form-select">
+                        <option value="">-- Seleccione --</option>
+                    </select>
+                    <span asp-validation-for="IdMarca" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="IdModelo" class="form-label"></label>
+                    <select asp-for="IdModelo" asp-items="modelos" class="form-select">
+                        <option value="">-- Seleccione --</option>
+                    </select>
+                    <span asp-validation-for="IdModelo" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="IdUbicacion" class="form-label"></label>
+                    <select asp-for="IdUbicacion" asp-items="ubicaciones" class="form-select">
+                        <option value="">-- Seleccione --</option>
+                    </select>
+                    <span asp-validation-for="IdUbicacion" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="FechaAdquisicion" class="form-label"></label>
+                    <input asp-for="FechaAdquisicion" class="form-control" type="date" />
+                    <span asp-validation-for="FechaAdquisicion" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="IdEstado" class="form-label"></label>
+                    <select asp-for="IdEstado" asp-items="estados" class="form-select"></select>
+                    <span asp-validation-for="IdEstado" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

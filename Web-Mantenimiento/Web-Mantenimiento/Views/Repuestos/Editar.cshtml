@@ -1,0 +1,79 @@
+@model Web_Mantenimiento.Models.Repuestos.ActualizarRepuestoViewModel
+@inject Web_Mantenimiento.Services.ApiCatalogoService Catalogos
+@{
+    ViewData["Title"] = $"Editar {Model.CodigoRepuesto}";
+    var estados = (await Catalogos.ObtenerEstadosAsync())
+        .Where(e => e.Value is "1" or "2")
+        .ToList();
+}
+
+<h2 class="mb-3">Editar repuesto @Model.CodigoRepuesto</h2>
+<partial name="_MensajesTempData" />
+
+@if (ViewBag.Error != null)
+{
+    <div class="mb-3">
+        <a asp-action="Editar"
+           asp-route-codigoRepuesto="@Model.CodigoRepuesto"
+           class="btn btn-sm btn-outline-warning">
+            Recargar versión actual del repuesto
+        </a>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Editar" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="CodigoRepuesto" />
+            <input type="hidden" asp-for="RowVersion" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="CodigoRepuesto" class="form-label"></label>
+                    <input value="@Model.CodigoRepuesto" class="form-control" disabled />
+                </div>
+
+                <div class="col-md-8">
+                    <label asp-for="Nombre" class="form-label"></label>
+                    <input asp-for="Nombre" class="form-control" />
+                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="Stock" class="form-label"></label>
+                    <input asp-for="Stock" class="form-control" type="number" min="0" />
+                    <span asp-validation-for="Stock" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="StockMinimo" class="form-label"></label>
+                    <input asp-for="StockMinimo" class="form-control" type="number" min="0" />
+                    <span asp-validation-for="StockMinimo" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="CostoUnitario" class="form-label"></label>
+                    <input asp-for="CostoUnitario" class="form-control" type="number" step="0.01" min="0.01" />
+                    <span asp-validation-for="CostoUnitario" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="IdEstado" class="form-label"></label>
+                    <select asp-for="IdEstado" asp-items="estados" class="form-select"></select>
+                    <span asp-validation-for="IdEstado" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Actualizar</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

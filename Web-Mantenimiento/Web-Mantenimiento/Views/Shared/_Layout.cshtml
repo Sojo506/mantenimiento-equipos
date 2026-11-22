@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Http
 @{
     var token = Context.Session.GetString("JwtToken");
     var nombre = Context.Session.GetString("Nombre");
@@ -39,48 +39,58 @@
                          id="menuPrincipal">
 
                         <ul class="navbar-nav me-auto">
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                   asp-controller="Home"
+                                   asp-action="Index">Inicio</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                   asp-controller="Equipos"
+                                   asp-action="Index">Equipos</a>
+                            </li>
 
-                            @if (rol == "Administrador")
+                            @if (rol is "Administrador" or "Supervisor" or "Tecnico")
                             {
                                 <li class="nav-item">
                                     <a class="nav-link"
-                                       asp-controller="Home"
-                                       asp-action="Index">Inicio</a>
+                                       asp-controller="Repuestos"
+                                       asp-action="Index">Repuestos</a>
                                 </li>
+                            }
+
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                   asp-controller="Ordenes"
+                                   asp-action="Index">Órdenes</a>
+                            </li>
+
+                            @if (rol is "Tecnico" or "Administrador")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link"
+                                       asp-controller="Ordenes"
+                                       asp-action="BandejaTecnico">Bandeja Técnico</a>
+                                </li>
+                            }
+
+                            @if (rol is "Supervisor" or "Administrador")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link"
+                                       asp-controller="Ordenes"
+                                       asp-action="BandejaSupervisor">Bandeja Supervisor</a>
+                                </li>
+                            }
+
+                            @if (rol == "Administrador")
+                            {
                                 <li class="nav-item">
                                     <a class="nav-link"
                                        asp-controller="Usuarios"
                                        asp-action="Index">Usuarios</a>
                                 </li>
                             }
-
-                            @if (rol == "Supervisor")
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link"
-                                       asp-controller="Home"
-                                       asp-action="Index">Inicio</a>
-                                </li>
-                            }
-
-                            @if (rol == "Tecnico")
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link"
-                                       asp-controller="Home"
-                                       asp-action="Index">Inicio</a>
-                                </li>
-                            }
-
-                            @if (rol == "Solicitante")
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link"
-                                       asp-controller="Home"
-                                       asp-action="Index">Inicio</a>
-                                </li>
-                            }
-
                         </ul>
 
                         <div class="d-flex align-items-center text-white">

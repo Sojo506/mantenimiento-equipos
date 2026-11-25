@@ -51,8 +51,6 @@ public class ManejadorExcepcionesGlobal : IExceptionHandler
         problemDetails.Extensions["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
 
         httpContext.Response.StatusCode = statusCode;
-        await httpContext.Response.WriteAsJsonAsync(problemDetails, options: null, contentType: "application/problem+json", cancellationToken);
-
         await httpContext.Response.WriteAsJsonAsync(
             problemDetails,
             options: null,

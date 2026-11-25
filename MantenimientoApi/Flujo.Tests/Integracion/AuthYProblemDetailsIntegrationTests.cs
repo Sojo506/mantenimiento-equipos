@@ -30,6 +30,7 @@ public class AuthYProblemDetailsIntegrationTests : IClassFixture<WebApplicationF
     {
         _factory = factory.WithWebHostBuilder(builder =>
         {
+            builder.UseSetting("ReglasNegocio:ProcesoAutomaticoHabilitado", "false");
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IRepositorioUsuario>();

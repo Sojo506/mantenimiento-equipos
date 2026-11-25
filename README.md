@@ -92,13 +92,15 @@ erDiagram
 
 ## 4. Tabla de Cumplimiento y Trazabilidad (Sección 5)
 
-| Código / Módulo | Descripción del Requisito / Regla de Negocio | Implementación en Backend (`MantenimientoApi`) | Implementación en Frontend (`Web-Mantenimiento`) | Pruebas Automatizadas (`Flujo.Tests`) |
+| Código / Módulo | Descripción del Requisito / Regla de Negocio | Implementación en Backend (`MantenimientoApi`) | Implementación en Frontend (`Web-Mantenimiento`) | Pruebas Automatizadas (`Flujo.Tests` / `API.Tests`) |
 | :--- | :--- | :--- | :--- | :--- |
+| **RN-01** | Escalamiento automático de órdenes críticas sin pasar a `En Proceso` dentro de `MaxHorasCriticaSinAtender` (4 horas). | `ProcesadorReglasAutomaticas` (`BackgroundService`) + `ServicioOrdenDeTrabajo.EscalarCriticasSinAtenderAsync` | `Views/Ordenes/BandejaSupervisor.cshtml` + botón de ejecución inmediata | `RN01_OrdenCriticaSinAtenderMasDelLimite_SeEscalaYQuedaRegistradaEnBitacora` |
 | **RN-02** | Cierre de orden exige `TiempoInvertido > 0` y al menos un repuesto o justificación `SinRepuestos`. | `ServicioOrdenDeTrabajo.CambiarEstadoAsync` | `Views/Ordenes/_OrdenAcciones.cshtml` | `CambiarEstadoAsync_ACerradaSinRepuestosNiJustificacion_LanzaReglaNegocioException_RN02` |
 | **RN-03** | Al acumular `>= 3` fallas en los últimos 6 meses, el equipo pasa automáticamente a estado `En Riesgo` (`IdEstado = 5`). | `ServicioFalla.RegistrarAsync` + `FallasController` | `FallasController` + `Views/Fallas/Crear.cshtml` | `RegistrarAsync_TerceraFallaEnUltimos6Meses_CambiaEstadoEquipoAEnRiesgo_RN03` |
-| **RN-04** | Un equipo `Dado de Baja` no admite órdenes ni fallas; no se permite más de una orden correctiva abierta simultánea por equipo. | `ServicioOrdenDeTrabajo.CrearAsync` + `ServicioFalla.RegistrarAsync` | `OrdenesController.Crear` + `FallasController.Crear` | `CrearAsync_CorrectivaConOrdenAbiertaExistente_LanzaReglaNegocioException_RN04` |
+| **RN-04** | Un equipo `Dado de Baja` no admite órdenes, fallas ni planes; no se permite más de una orden correctiva abierta simultánea por equipo. | `ServicioOrdenDeTrabajo.CrearAsync` + `ServicioFalla` + `ServicioPlanMantenimiento` | `OrdenesController.Crear` + `FallasController.Crear` + `PlanesController.Crear` | `CrearAsync_CorrectivaConOrdenAbiertaExistente_LanzaReglaNegocioException_RN04` |
 | **RN-05** | Descuento automático de stock al asignar repuestos; prohibición de stock negativo. | `ServicioOrdenDeTrabajo.AsignarRepuestoAsync` + `ServicioRepuesto` | `RepuestosController` + `OrdenesController.AsignarRepuesto` | `AsignarRepuestoAsync_StockInsuficiente_LanzaReglaNegocioException_RN05` |
-| **RN-07** | Un técnico no puede tener más de `MaxOrdenesEnProcesoPorTecnico` (3) órdenes en estado `En Proceso` simultáneamente. | `ServicioOrdenDeTrabajo.CrearAsync` / `CambiarEstadoAsync` | `OrdenesController.BandejaTecnico` | Validación de umbral en `ServicioOrdenDeTrabajo` |
+| **RN-06** | Generación automática de órdenes preventivas al vencer `ProximaFecha` del plan y reprogramación según `Frecuencia`. | `ProcesadorReglasAutomaticas` (`BackgroundService`) + `ServicioPlanMantenimiento.GenerarOrdenesPreventivasAsync` + `PlanesController` | `PlanesController` + `Views/Planes/Index.cshtml`, `Crear.cshtml`, `Editar.cshtml` | `RN06_PlanVencido_GeneraOrdenPreventivaYReprogramaElPlan` |
+| **RN-07** | Un técnico no puede tener más de `MaxOrdenesEnProcesoPorTecnico` (3) órdenes en estado `En Proceso` simultáneamente. | `ServicioOrdenDeTrabajo.CrearAsync` / `CambiarEstadoAsync` / `AsignarTecnicoAsync` | `OrdenesController.BandejaTecnico` / `BandejaSupervisor` | Validación de umbral en `ServicioOrdenDeTrabajoReglasTests` |
 | **RN-08** | Máquina de estados estricta y cálculo automático de `FechaLimite` según prioridad (`Critica`, `Alta`, `Media`, `Baja`). | `ServicioOrdenDeTrabajo` (`TransicionesValidas`) | `Views/Ordenes/Detalle.cshtml` | `CambiarEstadoAsync_TransicionInvalidaDeAbiertaAEnProcesoDirecto_LanzaConflictoException_RN08` |
 | **RN-09** | Una orden en estado `Cerrada` (11) es estrictamente inmutable y la bitácora no permite edición ni borrado. | `ServicioOrdenDeTrabajo.ActualizarAsync` + `RepositorioBitacoraOrden` | `Views/Ordenes/Bitacora.cshtml` | `ActualizarAsync_OrdenCerradaEsInmutable_LanzaConflictoException_RN09` |
 | **Seguridad JWT + Roles** | Login con PBKDF2-SHA256, emisión de JWT Bearer, políticas por rol (`Administrador`, `Supervisor`, `Tecnico`, `Solicitante`). | `AuthController`, `AuthServicio`, `[Authorize(Roles=...)]` | `AccountController`, `JwtDelegatingHandler`, `[AutorizacionSesion]`, `_Layout.cshtml` | `AuthYProblemDetailsIntegrationTests` (`401`, `403`, `200`) |
@@ -153,7 +155,7 @@ dotnet build MantenimientoApi/MantenimientoApi.slnx --configuration Release
 # 2. Compilar Frontend MVC (Web-Mantenimiento)
 dotnet build Web-Mantenimiento/Web-Mantenimiento.slnx --configuration Release
 
-# 3. Ejecutar Suite Completa de Pruebas (30 pruebas: Unitarias + Integración)
+# 3. Ejecutar Suite Completa de Pruebas (62 pruebas: 47 en Flujo.Tests + 15 en API.Tests)
 dotnet test MantenimientoApi/MantenimientoApi.slnx --configuration Release
 
 # 4. Iniciar API (puerto 5237 por defecto)

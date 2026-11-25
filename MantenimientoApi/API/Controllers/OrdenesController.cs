@@ -192,10 +192,9 @@ public class OrdenesController : ControllerBase
     /// Actualiza la información operativa de una orden de trabajo (prioridad, descripción, técnico, tiempo invertido).
     /// </summary>
     [HttpPut("{numero:int:min(1)}")]
+    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [EndpointSummary("Actualizar orden de trabajo")]
     [EndpointDescription("Requiere el RowVersion en el cuerpo o en If-Match. 409 si la orden cambió desde que se leyó o si está Cerrada (RN-09).")]
-    [HttpPut("{numero:int}")]
-    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [ProducesResponseType(typeof(OrdenDeTrabajoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -216,10 +215,9 @@ public class OrdenesController : ControllerBase
     /// Transiciona el estado de la orden de trabajo mediante la máquina de estados estricta y registra en bitácora inmutable.
     /// </summary>
     [HttpPut("{numero:int:min(1)}/estado")]
+    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [EndpointSummary("Cambiar estado de la orden")]
     [EndpointDescription("Aplica la máquina de estados (7 Abierta, 8 Asignada, 9 En Proceso, 10 En Espera de Repuesto, 11 Cerrada, 12 Escalada). 400 si no se cumple RN-02 al cerrar o RN-07 al iniciar. 409 si la transición no es válida, la orden está Cerrada (RN-09) o el RowVersion no coincide.")]
-    [HttpPut("{numero:int}/estado")]
-    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [ProducesResponseType(typeof(OrdenDeTrabajoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -243,6 +241,7 @@ public class OrdenesController : ControllerBase
     }
 
     [HttpPut("{numero:int:min(1)}/asignacion")]
+    [Authorize(Roles = "Administrador,Supervisor")]
     [EndpointSummary("Asignar técnico a la orden")]
     [EndpointDescription("Una orden Abierta o Escalada pasa a Asignada; en otros estados solo cambia el responsable. 400 si el usuario no es un técnico activo o supera su límite (RN-07). 409 si la orden está Cerrada o el RowVersion no coincide.")]
     [ProducesResponseType(typeof(OrdenDeTrabajoDto), StatusCodes.Status200OK)]
@@ -265,10 +264,9 @@ public class OrdenesController : ControllerBase
     /// Asigna repuestos a la orden de trabajo descontando existencias de bodega y recalculando costos.
     /// </summary>
     [HttpPost("{numero:int:min(1)}/repuestos")]
+    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [EndpointSummary("Asignar repuesto a la orden")]
     [EndpointDescription("Descuenta el stock (RN-05). 400 si el stock es insuficiente. 409 si la orden está Cerrada, si el RowVersion enviado (cuerpo o If-Match) no coincide, o si el repuesto fue modificado al mismo tiempo por otro usuario.")]
-    [HttpPost("{numero:int}/repuestos")]
-    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [ProducesResponseType(typeof(OrdenDeTrabajoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

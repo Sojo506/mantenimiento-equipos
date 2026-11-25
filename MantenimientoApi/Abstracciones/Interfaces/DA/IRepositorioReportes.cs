@@ -11,4 +11,15 @@ public interface IRepositorioReportes
         DateTime fechaInicio, 
         DateTime fechaFin, 
         CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<ReporteOrdenesEstadoDto>> ObtenerReporteOrdenesAsync(
+        DateTime? fechaInicio = null,
+        DateTime? fechaFin = null,
+        CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<ReporteEquipoCriticoDto>> ObtenerReporteEquiposCriticosAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<ReporteProductividadTecnicoDto>> ObtenerReporteProductividadTecnicosAsync(
+        CancellationToken cancellationToken = default);
 }

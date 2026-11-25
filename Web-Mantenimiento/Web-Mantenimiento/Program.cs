@@ -48,6 +48,8 @@ builder.Services.AddScoped<ApiEquipoService>();
 builder.Services.AddScoped<ApiRepuestoService>();
 builder.Services.AddScoped<ApiOrdenService>();
 builder.Services.AddScoped<ApiTableroService>();
+builder.Services.AddScoped<ApiFallaService>();
+builder.Services.AddScoped<ApiReporteService>();
 
 var app = builder.Build();
 

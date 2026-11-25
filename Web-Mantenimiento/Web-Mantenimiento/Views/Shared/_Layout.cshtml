@@ -65,6 +65,12 @@
                                    asp-action="Index">Órdenes</a>
                             </li>
 
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                   asp-controller="Fallas"
+                                   asp-action="Index">@(rol == "Solicitante" ? "Reportar Falla" : "Fallas")</a>
+                            </li>
+
                             @if (rol is "Tecnico" or "Administrador")
                             {
                                 <li class="nav-item">
@@ -80,6 +86,11 @@
                                     <a class="nav-link"
                                        asp-controller="Ordenes"
                                        asp-action="BandejaSupervisor">Bandeja Supervisor</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link"
+                                       asp-controller="Reportes"
+                                       asp-action="Index">Reportes CSV</a>
                                 </li>
                             }
 

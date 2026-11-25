@@ -14,6 +14,7 @@ public interface IRepositorioOrdenDeTrabajo
     Task<IEnumerable<OrdenDeTrabajo>> ObtenerPorSolicitanteAsync(string identificacionSolicitante, CancellationToken cancellationToken = default);
     Task<bool> TieneOrdenCorrectivaAbiertaAsync(string codigoEquipo, CancellationToken cancellationToken = default);
     Task<int> ContarOrdenesEnProcesoPorTecnicoAsync(string identificacionTecnico, CancellationToken cancellationToken = default);
+    Task<IEnumerable<OrdenDeTrabajo>> ObtenerCriticasSinAtenderAsync(DateTime fechaCorte, CancellationToken cancellationToken = default);
     Task AgregarAsync(OrdenDeTrabajo orden, CancellationToken cancellationToken = default);
     Task ActualizarAsync(OrdenDeTrabajo orden, CancellationToken cancellationToken = default);
     Task GuardarCambiosAsync(CancellationToken cancellationToken = default);

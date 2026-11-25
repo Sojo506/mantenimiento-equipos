@@ -322,6 +322,11 @@ public class ServicioOrdenDeTrabajo : IServicioOrdenDeTrabajo
             throw new ConflictoException("No se pueden agregar repuestos a una orden cerrada (RN-09).");
         }
 
+        if (!string.IsNullOrWhiteSpace(dto.RowVersion))
+        {
+            ValidarTokenConcurrencia(orden.RowVersion, dto.RowVersion, numero);
+        }
+
         var repuesto = await _repositorioRepuesto.ObtenerPorCodigoAsync(dto.CodigoRepuesto, cancellationToken);
         if (repuesto == null)
         {
@@ -368,6 +373,115 @@ public class ServicioOrdenDeTrabajo : IServicioOrdenDeTrabajo
         }
 
         return await _repositorioBitacora.ObtenerHistorialPorOrdenAsync(numero, cancellationToken);
+    }
+
+    public async Task<OrdenDeTrabajoDto> AsignarTecnicoAsync(int numero, AsignarTecnicoOrdenDto dto, CancellationToken cancellationToken = default)
+    {
+        var orden = await _repositorioOrden.ObtenerPorNumeroAsync(numero, cancellationToken);
+        if (orden == null)
+        {
+            throw new NoEncontradoException("OrdenDeTrabajo", numero);
+        }
+
+        if (orden.IdEstado == 11)
+        {
+            throw new ConflictoException("Una orden en estado 'Cerrada' es estrictamente inmutable: no puede reasignarse (RN-09).");
+        }
+
+        ValidarTokenConcurrencia(orden.RowVersion, dto.RowVersion, numero);
+
+        var tecnico = await _repositorioUsuario.ObtenerPorIdentificacionAsync(dto.IdentificacionTecnico, cancellationToken);
+        if (tecnico == null)
+        {
+            throw new NoEncontradoException("Usuario Técnico", dto.IdentificacionTecnico);
+        }
+
+        if (tecnico.IdTipoUsuario != 3 || tecnico.IdEstado != 1)
+        {
+            throw new ReglaNegocioException($"El usuario '{dto.IdentificacionTecnico}' no es un técnico activo y no puede recibir órdenes.");
+        }
+
+        if (orden.IdentificacionTecnico == dto.IdentificacionTecnico && orden.IdEstado != 7 && orden.IdEstado != 12)
+        {
+            throw new ReglaNegocioException($"La orden #{numero} ya está asignada al técnico '{dto.IdentificacionTecnico}'.");
+        }
+
+        if (orden.IdEstado == 9)
+        {
+            int enProceso = await _repositorioOrden.ContarOrdenesEnProcesoPorTecnicoAsync(dto.IdentificacionTecnico, cancellationToken);
+            if (enProceso >= _options.MaxOrdenesEnProcesoPorTecnico)
+            {
+                throw new ReglaNegocioException($"El técnico '{dto.IdentificacionTecnico}' ya cuenta con {enProceso} órdenes en proceso, alcanzando el límite permitido de {_options.MaxOrdenesEnProcesoPorTecnico} (RN-07).");
+            }
+        }
+
+        string estadoAnterior = NombresEstados.GetValueOrDefault(orden.IdEstado, orden.IdEstado.ToString());
+
+        if (orden.IdEstado == 7 || orden.IdEstado == 12)
+        {
+            orden.IdEstado = 8;
+        }
+
+        string? tecnicoAnterior = orden.IdentificacionTecnico;
+        orden.IdentificacionTecnico = tecnico.Identificacion;
+
+        await _repositorioOrden.ActualizarAsync(orden, cancellationToken);
+        await _repositorioOrden.GuardarCambiosAsync(cancellationToken);
+
+        string comentario = string.IsNullOrWhiteSpace(dto.Comentario)
+            ? (tecnicoAnterior == null
+                ? $"Asignación del técnico {tecnico.Nombre} ({tecnico.Identificacion})."
+                : $"Reasignación del técnico {tecnicoAnterior} a {tecnico.Nombre} ({tecnico.Identificacion}).")
+            : dto.Comentario.Trim();
+
+        await _repositorioBitacora.RegistrarAsync(new BitacoraOrden
+        {
+            Numero = orden.Numero,
+            Identificacion = dto.IdentificacionUsuario,
+            Fecha = DateTime.UtcNow,
+            EstadoAnterior = estadoAnterior,
+            EstadoNuevo = NombresEstados.GetValueOrDefault(orden.IdEstado, orden.IdEstado.ToString()),
+            Comentario = comentario
+        }, cancellationToken);
+        await _repositorioBitacora.GuardarCambiosAsync(cancellationToken);
+
+        return await ObtenerPorNumeroAsync(numero, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<int>> EscalarCriticasSinAtenderAsync(CancellationToken cancellationToken = default)
+    {
+        DateTime ahora = DateTime.UtcNow;
+        DateTime fechaCorte = ahora.AddHours(-_options.MaxHorasCriticaSinAtender);
+
+        var pendientes = (await _repositorioOrden.ObtenerCriticasSinAtenderAsync(fechaCorte, cancellationToken)).ToList();
+        if (pendientes.Count == 0)
+        {
+            return Array.Empty<int>();
+        }
+
+        var escaladas = new List<int>();
+        foreach (var orden in pendientes)
+        {
+            string estadoAnterior = NombresEstados.GetValueOrDefault(orden.IdEstado, orden.IdEstado.ToString());
+            orden.IdEstado = 12;
+
+            await _repositorioOrden.ActualizarAsync(orden, cancellationToken);
+            await _repositorioBitacora.RegistrarAsync(new BitacoraOrden
+            {
+                Numero = orden.Numero,
+                Identificacion = _options.IdentificacionUsuarioSistema,
+                Fecha = ahora,
+                EstadoAnterior = estadoAnterior,
+                EstadoNuevo = NombresEstados[12],
+                Comentario = $"Escalamiento automático (RN-01): la orden crítica superó {_options.MaxHorasCriticaSinAtender} horas sin pasar a 'En Proceso'."
+            }, cancellationToken);
+
+            escaladas.Add(orden.Numero);
+        }
+
+        await _repositorioOrden.GuardarCambiosAsync(cancellationToken);
+
+        return escaladas;
     }
 
     private static void ValidarTokenConcurrencia(byte[] actualToken, string clientTokenStr, int numeroOrden)

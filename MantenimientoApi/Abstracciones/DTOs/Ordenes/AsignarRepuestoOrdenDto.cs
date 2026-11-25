@@ -12,4 +12,6 @@ public class AsignarRepuestoOrdenDto
 
     [Range(1, 1000, ErrorMessage = "La cantidad usada debe ser mayor a 0.")]
     public int Cantidad { get; set; }
+
+    public string? RowVersion { get; set; }
 }

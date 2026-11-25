@@ -1,0 +1,60 @@
+@model Web_Mantenimiento.Models.Fallas.RegistrarFallaViewModel
+@inject Web_Mantenimiento.Services.ApiEquipoService EquiposService
+@inject Web_Mantenimiento.Services.ApiCatalogoService Catalogos
+@{
+    ViewData["Title"] = "Reportar Falla";
+    var (resEquipos, _) = await EquiposService.ObtenerPaginadoAsync(null, "nombre", 1, 50);
+    var equipos = (resEquipos?.Items ?? new())
+        .Where(e => e.IdEstado != 6)
+        .Select(e => new SelectListItem($"{e.CodigoEquipo} - {e.Nombre} ({e.EstadoNombre})", e.CodigoEquipo))
+        .ToList();
+    var gravedades = await Catalogos.ObtenerTiposGravedadAsync();
+}
+
+<h2 class="mb-1">Reportar Falla de Equipo</h2>
+<p class="text-muted mb-3">
+    Al registrar una falla se asocia o apertura una orden correctiva y se evalúa la regla RN-03 (paso automático a estado <strong>En Riesgo</strong> al acumular 3 o más fallas).
+</p>
+
+<partial name="_MensajesTempData" />
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Crear" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="CodigoEquipo" class="form-label"></label>
+                    <select asp-for="CodigoEquipo" asp-items="equipos" class="form-select">
+                        <option value="">-- Seleccione el equipo --</option>
+                    </select>
+                    <span asp-validation-for="CodigoEquipo" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="IdTipoGravedad" class="form-label"></label>
+                    <select asp-for="IdTipoGravedad" asp-items="gravedades" class="form-select"></select>
+                    <span asp-validation-for="IdTipoGravedad" class="text-danger"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Descripcion" class="form-label"></label>
+                    <textarea asp-for="Descripcion" class="form-control" rows="3"
+                              placeholder="Describa el síntoma o anomalía detectada en el equipo..."></textarea>
+                    <span asp-validation-for="Descripcion" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-danger">Registrar falla</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

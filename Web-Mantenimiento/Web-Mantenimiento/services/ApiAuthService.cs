@@ -43,6 +43,11 @@ public class ApiAuthService
                 using var documento = JsonDocument.Parse(contenido);
 
                 if (documento.RootElement.TryGetProperty(
+                    "detail", out var detailProp) && !string.IsNullOrWhiteSpace(detailProp.GetString()))
+                {
+                    mensaje = detailProp.GetString()!;
+                }
+                else if (documento.RootElement.TryGetProperty(
                     "mensaje", out var propiedad))
                 {
                     mensaje = propiedad.GetString() ?? mensaje;

@@ -76,6 +76,11 @@
                                 </td>
                                 <td>
                                     <div class="d-flex gap-2">
+                                        <a asp-action="Detalles"
+                                           asp-route-identificacion="@usuario.Identificacion"
+                                           class="btn btn-sm btn-outline-secondary">
+                                            Ver
+                                        </a>
                                         <a asp-action="Editar"
                                            asp-route-identificacion="@usuario.Identificacion"
                                            class="btn btn-sm btn-outline-primary">

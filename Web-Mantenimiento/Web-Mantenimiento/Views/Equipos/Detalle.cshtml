@@ -1,8 +1,12 @@
 @model Web_Mantenimiento.Models.Equipos.EquipoViewModel
+@inject Web_Mantenimiento.Services.ApiEquipoService EquipoService
+@inject Web_Mantenimiento.Services.ApiFallaService FallaService
 @{
     ViewData["Title"] = $"Equipo {Model.CodigoEquipo}";
     var rol = Context.Session.GetString("Rol");
     var puedeGestionar = rol is "Administrador" or "Supervisor";
+    var (prediccion, _) = await EquipoService.ObtenerPrediccionAsync(Model.CodigoEquipo);
+    var (fallasEquipo, _) = await FallaService.ObtenerTodasAsync(Model.CodigoEquipo);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -11,6 +15,9 @@
         <span class="text-muted">Código: @Model.CodigoEquipo</span>
     </div>
     <div class="d-flex gap-2">
+        <a asp-controller="Fallas" asp-action="Crear" asp-route-codigoEquipo="@Model.CodigoEquipo" class="btn btn-outline-danger">
+            Reportar falla
+        </a>
         @if (puedeGestionar)
         {
             <a asp-action="Editar" asp-route-codigoEquipo="@Model.CodigoEquipo" class="btn btn-primary">Editar</a>
@@ -19,32 +26,151 @@
     </div>
 </div>
 
+<div class="row g-3 mb-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Ficha Técnica del Equipo</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Código</dt>
+                    <dd class="col-sm-8">@Model.CodigoEquipo</dd>
+
+                    <dt class="col-sm-4">Nombre</dt>
+                    <dd class="col-sm-8">@Model.Nombre</dd>
+
+                    <dt class="col-sm-4">Tipo de equipo</dt>
+                    <dd class="col-sm-8">@Model.TipoEquipoNombre</dd>
+
+                    <dt class="col-sm-4">Marca / Modelo</dt>
+                    <dd class="col-sm-8">@Model.MarcaNombre — @Model.ModeloNombre</dd>
+
+                    <dt class="col-sm-4">Ubicación</dt>
+                    <dd class="col-sm-8">@Model.UbicacionNombre</dd>
+
+                    <dt class="col-sm-4">Fecha de adquisición</dt>
+                    <dd class="col-sm-8">@Model.FechaAdquisicion.ToString("yyyy-MM-dd")</dd>
+
+                    <dt class="col-sm-4">Estado actual</dt>
+                    <dd class="col-sm-8"><partial name="_EstadoBadge" model="Model.EstadoNombre" /></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100 border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Predicción ML.NET (Horizonte 30 días)</span>
+                @if (prediccion != null)
+                {
+                    var badgeRiesgo = prediccion.NivelRiesgo switch
+                    {
+                        "Alto" => "bg-danger",
+                        "Medio" => "bg-warning text-dark",
+                        _ => "bg-success"
+                    };
+                    <span class="badge @badgeRiesgo">Riesgo @prediccion.NivelRiesgo</span>
+                }
+            </div>
+            <div class="card-body">
+                @if (prediccion == null)
+                {
+                    <p class="text-muted mb-0">No fue posible calcular la predicción para este equipo.</p>
+                }
+                else
+                {
+                    var barraColor = prediccion.NivelRiesgo switch
+                    {
+                        "Alto" => "bg-danger",
+                        "Medio" => "bg-warning",
+                        _ => "bg-success"
+                    };
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-semibold">Probabilidad estimada de falla</span>
+                            <span class="fw-bold">@prediccion.PorcentajeRiesgo%</span>
+                        </div>
+                        <div class="progress" style="height: 18px;">
+                            <div class="progress-bar @barraColor"
+                                 role="progressbar"
+                                 style="width: @(Math.Clamp((int)prediccion.PorcentajeRiesgo, 3, 100))%"
+                                 aria-valuenow="@prediccion.PorcentajeRiesgo"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                                @prediccion.PorcentajeRiesgo%
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span>Fallas en últimos 6 meses (RN-03):</span>
+                            <strong>@prediccion.FallasUltimos6Meses</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span>Órdenes correctivas históricas:</span>
+                            <strong>@prediccion.TotalOrdenesCorrectivas</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span>Antigüedad operativa:</span>
+                            <strong>@prediccion.AntiguedadMeses meses</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span>Horas de mantenimiento acumuladas:</span>
+                            <strong>@prediccion.HorasMantenimientoAcumuladas h</strong>
+                        </li>
+                    </ul>
+
+                    <div class="alert alert-light border mb-0 small">
+                        <strong>Recomendación del modelo:</strong> @prediccion.Recomendacion
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Historial de Fallas del Equipo</span>
+        <a asp-controller="Fallas" asp-action="Index" asp-route-codigoEquipo="@Model.CodigoEquipo" class="btn btn-sm btn-outline-secondary">
+            Ver todas
+        </a>
+    </div>
     <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">Código</dt>
-            <dd class="col-sm-9">@Model.CodigoEquipo</dd>
-
-            <dt class="col-sm-3">Nombre</dt>
-            <dd class="col-sm-9">@Model.Nombre</dd>
-
-            <dt class="col-sm-3">Tipo de equipo</dt>
-            <dd class="col-sm-9">@Model.TipoEquipoNombre</dd>
-
-            <dt class="col-sm-3">Marca</dt>
-            <dd class="col-sm-9">@Model.MarcaNombre</dd>
-
-            <dt class="col-sm-3">Modelo</dt>
-            <dd class="col-sm-9">@Model.ModeloNombre</dd>
-
-            <dt class="col-sm-3">Ubicación</dt>
-            <dd class="col-sm-9">@Model.UbicacionNombre</dd>
-
-            <dt class="col-sm-3">Fecha de adquisición</dt>
-            <dd class="col-sm-9">@Model.FechaAdquisicion.ToString("yyyy-MM-dd")</dd>
-
-            <dt class="col-sm-3">Estado</dt>
-            <dd class="col-sm-9"><partial name="_EstadoBadge" model="Model.EstadoNombre" /></dd>
-        </dl>
+        @if (fallasEquipo == null || fallasEquipo.Count == 0)
+        {
+            <p class="text-muted mb-0">Este equipo no registra fallas reportadas.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Gravedad</th>
+                            <th>Descripción</th>
+                            <th>Orden</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in fallasEquipo.Take(5))
+                        {
+                            <tr>
+                                <td>@f.Fecha.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td><span class="badge bg-secondary">@f.GravedadNombre</span></td>
+                                <td>@f.Descripcion</td>
+                                <td>
+                                    <a asp-controller="Ordenes" asp-action="Detalle" asp-route-numero="@f.NumeroOrden">
+                                        #@f.NumeroOrden
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>

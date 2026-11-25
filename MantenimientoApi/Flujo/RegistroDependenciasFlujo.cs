@@ -29,6 +29,9 @@ public static class RegistroDependenciasFlujo
         services.AddScoped<IServicioSalud, ServicioSalud>();
         services.AddScoped<IServicioPlanMantenimiento, ServicioPlanMantenimiento>();
         services.AddScoped<IServicioProcesoAutomatico, ServicioProcesoAutomatico>();
+        services.AddScoped<IServicioFalla, ServicioFalla>();
+        services.AddScoped<IServicioPrediccionFalla, ServicioPrediccionFalla>();
+        services.AddScoped<IServicioReportes, ServicioReportes>();
 
         // Servicio de hashing con ciclo de vida Singleton: sin estado mutable, seguro para concurrencia entre hilos.
         services.AddSingleton<IServicioPasswordHasher, ServicioPasswordHasher>();

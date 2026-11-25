@@ -13,6 +13,7 @@ public class UsuarioDto
     public string Correo { get; set; } = string.Empty;
     public int IdTipoUsuario { get; set; }
     public string RolNombre { get; set; } = string.Empty;
+    public string Rol => RolNombre;
     public int? IdEspecialidad { get; set; }
     public string? EspecialidadNombre { get; set; }
     public bool Disponibilidad { get; set; }

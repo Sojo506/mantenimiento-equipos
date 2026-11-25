@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Abstracciones.DTOs.Repuestos;
 using Abstracciones.Interfaces.Flujo;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -11,6 +12,7 @@ namespace API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize(Roles = "Administrador,Supervisor,Tecnico")]
 public class RepuestosController : ControllerBase
 {
     private readonly IServicioRepuesto _servicioRepuesto;
@@ -114,6 +116,7 @@ public class RepuestosController : ControllerBase
     /// Registra un nuevo repuesto en el catálogo.
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = "Administrador,Supervisor")]
     [ProducesResponseType(typeof(RepuestoDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -129,6 +132,7 @@ public class RepuestosController : ControllerBase
     /// Actualiza la información y existencias de un repuesto validando el token de concurrencia optimista.
     /// </summary>
     [HttpPut("{codigoRepuesto:codigoRuta}")]
+    [Authorize(Roles = "Administrador,Supervisor")]
     [ProducesResponseType(typeof(RepuestoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -154,6 +158,7 @@ public class RepuestosController : ControllerBase
     /// Elimina un repuesto si no posee registros históricos de consumo en órdenes de trabajo.
     /// </summary>
     [HttpDelete("{codigoRepuesto:codigoRuta}")]
+    [Authorize(Roles = "Administrador,Supervisor")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Abstracciones.DTOs.Ordenes;
 using Abstracciones.Interfaces.Flujo;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -12,6 +13,7 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 [Produces("application/json")]
 [Tags("Órdenes de Trabajo")]
+[Authorize]
 public class OrdenesController : ControllerBase
 {
     private static readonly string[] PrioridadesValidas = { "Baja", "Media", "Alta", "Critica" };
@@ -192,6 +194,8 @@ public class OrdenesController : ControllerBase
     [HttpPut("{numero:int:min(1)}")]
     [EndpointSummary("Actualizar orden de trabajo")]
     [EndpointDescription("Requiere el RowVersion en el cuerpo o en If-Match. 409 si la orden cambió desde que se leyó o si está Cerrada (RN-09).")]
+    [HttpPut("{numero:int}")]
+    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [ProducesResponseType(typeof(OrdenDeTrabajoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -214,6 +218,8 @@ public class OrdenesController : ControllerBase
     [HttpPut("{numero:int:min(1)}/estado")]
     [EndpointSummary("Cambiar estado de la orden")]
     [EndpointDescription("Aplica la máquina de estados (7 Abierta, 8 Asignada, 9 En Proceso, 10 En Espera de Repuesto, 11 Cerrada, 12 Escalada). 400 si no se cumple RN-02 al cerrar o RN-07 al iniciar. 409 si la transición no es válida, la orden está Cerrada (RN-09) o el RowVersion no coincide.")]
+    [HttpPut("{numero:int}/estado")]
+    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [ProducesResponseType(typeof(OrdenDeTrabajoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -261,6 +267,8 @@ public class OrdenesController : ControllerBase
     [HttpPost("{numero:int:min(1)}/repuestos")]
     [EndpointSummary("Asignar repuesto a la orden")]
     [EndpointDescription("Descuenta el stock (RN-05). 400 si el stock es insuficiente. 409 si la orden está Cerrada, si el RowVersion enviado (cuerpo o If-Match) no coincide, o si el repuesto fue modificado al mismo tiempo por otro usuario.")]
+    [HttpPost("{numero:int}/repuestos")]
+    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [ProducesResponseType(typeof(OrdenDeTrabajoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

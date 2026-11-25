@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Abstracciones.DTOs.Equipos;
 using Abstracciones.Interfaces.Flujo;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -13,13 +14,16 @@ namespace API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class EquiposController : ControllerBase
 {
     private readonly IServicioEquipo _servicioEquipo;
+    private readonly IServicioPrediccionFalla _servicioPrediccion;
 
-    public EquiposController(IServicioEquipo servicioEquipo)
+    public EquiposController(IServicioEquipo servicioEquipo, IServicioPrediccionFalla servicioPrediccion)
     {
         _servicioEquipo = servicioEquipo;
+        _servicioPrediccion = servicioPrediccion;
     }
 
     /// <summary>
@@ -100,9 +104,24 @@ public class EquiposController : ControllerBase
     }
 
     /// <summary>
+    /// Predice mediante ML.NET la probabilidad de que el equipo presente una falla en los próximos 30 días.
+    /// </summary>
+    [HttpGet("{codigoEquipo:codigoRuta}/prediccion")]
+    [ProducesResponseType(typeof(PrediccionFallaEquipoDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PrediccionFallaEquipoDto>> ObtenerPrediccionFalla(
+        [FromRoute] string codigoEquipo,
+        CancellationToken cancellationToken = default)
+    {
+        var prediccion = await _servicioPrediccion.PredecirFallaEquipoAsync(codigoEquipo, cancellationToken);
+        return Ok(prediccion);
+    }
+
+    /// <summary>
     /// Registra un nuevo equipo en el parque empresarial.
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = "Administrador,Supervisor")]
     [ProducesResponseType(typeof(EquipoDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<EquipoDto>> Crear(
@@ -117,6 +136,7 @@ public class EquiposController : ControllerBase
     /// Actualiza los datos de un equipo existente.
     /// </summary>
     [HttpPut("{codigoEquipo:codigoRuta}")]
+    [Authorize(Roles = "Administrador,Supervisor")]
     [ProducesResponseType(typeof(EquipoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -133,6 +153,7 @@ public class EquiposController : ControllerBase
     /// Elimina un equipo si no posee órdenes de trabajo asociadas.
     /// </summary>
     [HttpDelete("{codigoEquipo:codigoRuta}")]
+    [Authorize(Roles = "Administrador,Supervisor")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

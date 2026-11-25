@@ -1,28 +1,27 @@
 ﻿using Abstracciones.DTOs.Usuarios;
 using Abstracciones.Entidades;
-using Abstracciones.Interfaces; // <-- Asegúrate de tener este using para IAuthServicio e IServicioPasswordHasher
-using Abstracciones.Interfaces.DA; // <-- Tu namespace para IRepositorioUsuario
+using Abstracciones.Excepciones;
+using Abstracciones.Interfaces;
+using Abstracciones.Interfaces.DA;
 using Abstracciones.Interfaces.Flujo;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
 namespace Flujo.Servicios
 {
-    // 1. Se implementa la interfaz IAuthServicio
     public class AuthServicio : IAuthServicio
     {
         private readonly IRepositorioUsuario _repositorioUsuario;
         private readonly IConfiguration _configuracion;
-        private readonly IServicioPasswordHasher _passwordHasher; // 2. Se inyecta tu Hasher
+        private readonly IServicioPasswordHasher _passwordHasher;
 
         public AuthServicio(
             IRepositorioUsuario repositorioUsuario,
             IConfiguration configuracion,
-            IServicioPasswordHasher passwordHasher) // 3. Se agrega al constructor
+            IServicioPasswordHasher passwordHasher)
         {
             _repositorioUsuario = repositorioUsuario;
             _configuracion = configuracion;
@@ -31,30 +30,34 @@ namespace Flujo.Servicios
 
         public async Task<RespuestaLoginDto?> LoginAsync(LoginDto loginDto)
         {
-            // 1. Buscar al usuario por correo
-            var usuario = await _repositorioUsuario.ObtenerPorCorreoAsync(loginDto.Correo);
-
-            // 2. Validar que el usuario exista
-            if (usuario == null)
-                return null;
-
-            // 3. Validar que el usuario esté activo 
-            if (usuario.IdEstado != 1 || !usuario.Disponibilidad)
+            if (string.IsNullOrWhiteSpace(loginDto.Correo) || string.IsNullOrWhiteSpace(loginDto.Password))
             {
-                throw new UnauthorizedAccessException(
-                    "El usuario se encuentra inactivo o no disponible.");
+                throw new ReglaNegocioException("Debe ingresar el correo y la contraseña.");
             }
 
-            // 4. Verificar la contraseña usando TU SERVICIO (Adiós BCrypt directo)
-            bool passwordValida = _passwordHasher.VerificarPassword(loginDto.Password, usuario.PasswordHash);
+            var correo = loginDto.Correo.Trim().ToLowerInvariant();
+            var usuario = await _repositorioUsuario.ObtenerPorCorreoAsync(correo);
 
-            if (!passwordValida)
+            if (usuario == null)
+            {
                 return null;
+            }
 
-            // 5. Generar el Token
+            if (usuario.IdEstado != 1 || !usuario.Disponibilidad)
+            {
+                throw new NoAutorizadoException("El usuario está inactivo o no disponible.");
+            }
+
+            bool passwordValida = _passwordHasher.VerificarPassword(loginDto.Password, usuario.PasswordHash);
+            if (!passwordValida)
+            {
+                return null;
+            }
+
+            string rol = usuario.TipoUsuario?.Nombre ?? ObtenerRolPorId(usuario.IdTipoUsuario);
             string token = GenerarToken(usuario);
+            int minutos = ObtenerDuracionToken();
 
-            // 6. Mapear la entidad al DTO de salida
             var usuarioDto = new UsuarioDto
             {
                 Identificacion = usuario.Identificacion,
@@ -63,19 +66,20 @@ namespace Flujo.Servicios
                 SegundoApellido = usuario.SegundoApellido,
                 Correo = usuario.Correo,
                 IdTipoUsuario = usuario.IdTipoUsuario,
-                RolNombre = usuario.TipoUsuario?.Nombre ?? "Desconocido",
+                RolNombre = rol,
                 IdEspecialidad = usuario.IdEspecialidad,
                 EspecialidadNombre = usuario.Especialidad?.Nombre,
                 Disponibilidad = usuario.Disponibilidad,
                 IdEstado = usuario.IdEstado,
-                EstadoNombre = usuario.Estado?.Nombre ?? "Desconocido"
+                EstadoNombre = usuario.Estado?.Nombre ?? "Activo"
             };
 
-            // 7. Retornar la respuesta
             return new RespuestaLoginDto
             {
+                Mensaje = "Inicio de sesión exitoso.",
                 Token = token,
-                Expiracion = DateTime.UtcNow.AddHours(2),
+                TipoToken = "Bearer",
+                Expiracion = DateTime.UtcNow.AddMinutes(minutos),
                 Usuario = usuarioDto
             };
         }
@@ -83,19 +87,25 @@ namespace Flujo.Servicios
         public string GenerarToken(Usuario usuario)
         {
             var jwtSettings = _configuracion.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"]!;
+            var secretKey = jwtSettings["SecretKey"];
+
+            if (string.IsNullOrWhiteSpace(secretKey) || Encoding.UTF8.GetByteCount(secretKey) < 32)
+            {
+                throw new InvalidOperationException("La clave JWT debe tener al menos 32 bytes.");
+            }
+
             var issuer = jwtSettings["Issuer"];
             var audience = jwtSettings["Audience"];
+            string rol = usuario.TipoUsuario?.Nombre ?? ObtenerRolPorId(usuario.IdTipoUsuario);
 
-            // Claims (Información del usuario dentro del token)
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, usuario.Correo),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.NameIdentifier, usuario.Identificacion),
                 new Claim(ClaimTypes.Email, usuario.Correo),
-                new Claim(ClaimTypes.Name, $"{usuario.Nombre} {usuario.PrimerApellido}"),
-                new Claim(ClaimTypes.Role, usuario.TipoUsuario?.Nombre ?? "Solicitante")
+                new Claim(ClaimTypes.Name, usuario.Nombre),
+                new Claim(ClaimTypes.Role, rol)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
@@ -105,11 +115,27 @@ namespace Flujo.Servicios
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
+                expires: DateTime.UtcNow.AddMinutes(ObtenerDuracionToken()),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        private int ObtenerDuracionToken()
+        {
+            return int.TryParse(_configuracion["JwtSettings:ExpirationMinutes"], out int minutos) && minutos > 0
+                ? minutos
+                : 60;
+        }
+
+        private static string ObtenerRolPorId(int idTipoUsuario) => idTipoUsuario switch
+        {
+            1 => "Administrador",
+            2 => "Supervisor",
+            3 => "Tecnico",
+            4 => "Solicitante",
+            _ => "Solicitante"
+        };
     }
 }

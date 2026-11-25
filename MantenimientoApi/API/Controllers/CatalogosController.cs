@@ -1,5 +1,6 @@
 using Abstracciones.Entidades;
 using Abstracciones.Interfaces.Flujo;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -10,6 +11,7 @@ namespace API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class CatalogosController : ControllerBase
 {
     private readonly IServicioCatalogos _servicioCatalogos;

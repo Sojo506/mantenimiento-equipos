@@ -1,0 +1,53 @@
+@model Web_Mantenimiento.Models.Usuarios.UsuarioViewModel
+@{
+    ViewData["Title"] = $"Usuario {Model.Identificacion}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-0">@Model.NombreCompleto</h2>
+        <span class="text-muted">Identificación: @Model.Identificacion</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Editar" asp-route-identificacion="@Model.Identificacion" class="btn btn-primary">Editar</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver al listado</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Identificación</dt>
+            <dd class="col-sm-9">@Model.Identificacion</dd>
+
+            <dt class="col-sm-3">Nombre completo</dt>
+            <dd class="col-sm-9">@Model.NombreCompleto</dd>
+
+            <dt class="col-sm-3">Correo electrónico</dt>
+            <dd class="col-sm-9">@Model.Correo</dd>
+
+            <dt class="col-sm-3">Rol</dt>
+            <dd class="col-sm-9"><span class="badge bg-info text-dark">@Model.RolNombre</span></dd>
+
+            <dt class="col-sm-3">Especialidad técnica</dt>
+            <dd class="col-sm-9">@(Model.EspecialidadNombre ?? "No aplica")</dd>
+
+            <dt class="col-sm-3">Estado</dt>
+            <dd class="col-sm-9">
+                <partial name="_EstadoBadge" model="Model.EstadoNombre" />
+            </dd>
+
+            <dt class="col-sm-3">Disponibilidad operativa</dt>
+            <dd class="col-sm-9">
+                @if (Model.Disponibilidad)
+                {
+                    <span class="badge bg-success">Disponible</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">No disponible</span>
+                }
+            </dd>
+        </dl>
+    </div>
+</div>

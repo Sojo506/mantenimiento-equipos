@@ -1,5 +1,6 @@
 ﻿using Abstracciones.DTOs.Usuarios;
 using Abstracciones.Entidades;
+using Abstracciones.Excepciones;
 using Abstracciones.Interfaces;
 using Abstracciones.Interfaces.DA;
 using Abstracciones.Interfaces.Flujo;
@@ -33,10 +34,10 @@ namespace Flujo.Servicios
         {
             // Validar duplicados
             if (await _repositorio.ObtenerPorCorreoAsync(dto.Correo, cancellationToken) != null)
-                throw new InvalidOperationException("El correo ya está registrado.");
+                throw new ReglaNegocioException("El correo ya está registrado.");
 
             if (await _repositorio.ObtenerPorIdentificacionAsync(dto.Identificacion, cancellationToken) != null)
-                throw new InvalidOperationException("La identificación ya está registrada.");
+                throw new ReglaNegocioException("La identificación ya está registrada.");
 
             var nuevoUsuario = new Usuario
             {
@@ -70,7 +71,7 @@ namespace Flujo.Servicios
                 identificacion, cancellationToken);
 
             if (usuario == null)
-                throw new KeyNotFoundException("Usuario no encontrado.");
+                throw new NoEncontradoException("Usuario", identificacion);
 
             // Verificar que el correo no pertenezca a otro usuario
             var usuarioConCorreo = await _repositorio.ObtenerPorCorreoAsync(
@@ -79,7 +80,7 @@ namespace Flujo.Servicios
             if (usuarioConCorreo != null &&
                 usuarioConCorreo.Identificacion != identificacion)
             {
-                throw new InvalidOperationException(
+                throw new ReglaNegocioException(
                     "El correo ya está registrado por otro usuario.");
             }
 
@@ -105,7 +106,7 @@ namespace Flujo.Servicios
                 identificacion, cancellationToken);
 
             if (usuario == null)
-                throw new KeyNotFoundException("Usuario no encontrado.");
+                throw new NoEncontradoException("Usuario", identificacion);
 
             usuario.IdEstado = 2;
             usuario.Disponibilidad = false;

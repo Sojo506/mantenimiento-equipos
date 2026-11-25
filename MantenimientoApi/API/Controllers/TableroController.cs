@@ -1,5 +1,6 @@
 ﻿using Abstracciones.DTOs.Tablero;
 using Abstracciones.Interfaces.Flujo;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -8,6 +9,7 @@ namespace API.Controllers;
 [Route("api/tablero")]
 [Produces("application/json")]
 [Tags("Tablero de Control")]
+[Authorize]
 public class TableroController : ControllerBase
 {
     private readonly IServicioTablero _servicioTablero;

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Abstracciones.DTOs.Ordenes;
 using Abstracciones.Interfaces.Flujo;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -11,6 +12,7 @@ namespace API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize]
 public class OrdenesController : ControllerBase
 {
     private readonly IServicioOrdenDeTrabajo _servicioOrden;
@@ -154,6 +156,7 @@ public class OrdenesController : ControllerBase
     /// Actualiza la información operativa de una orden de trabajo (prioridad, descripción, técnico, tiempo invertido).
     /// </summary>
     [HttpPut("{numero:int}")]
+    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [ProducesResponseType(typeof(OrdenDeTrabajoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -178,6 +181,7 @@ public class OrdenesController : ControllerBase
     /// Transiciona el estado de la orden de trabajo mediante la máquina de estados estricta y registra en bitácora inmutable.
     /// </summary>
     [HttpPut("{numero:int}/estado")]
+    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [ProducesResponseType(typeof(OrdenDeTrabajoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -202,6 +206,7 @@ public class OrdenesController : ControllerBase
     /// Asigna repuestos a la orden de trabajo descontando existencias de bodega y recalculando costos.
     /// </summary>
     [HttpPost("{numero:int}/repuestos")]
+    [Authorize(Roles = "Administrador,Supervisor,Tecnico")]
     [ProducesResponseType(typeof(OrdenDeTrabajoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

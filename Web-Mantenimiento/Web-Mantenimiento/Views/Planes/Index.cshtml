@@ -1,0 +1,117 @@
+@model Web_Mantenimiento.Models.Planes.PlanListadoViewModel
+@{
+    ViewData["Title"] = "Planes de Mantenimiento";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h2 class="mb-0">Planes de Mantenimiento Preventivo</h2>
+        <p class="text-muted mb-0">Al llegar la próxima fecha, el sistema genera la orden preventiva y reprograma el plan (RN-06)</p>
+    </div>
+    <div class="d-flex gap-2">
+        <form asp-action="EjecutarReglas" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-danger">Generar órdenes vencidas ahora</button>
+        </form>
+        <a asp-action="Crear" class="btn btn-primary">Nuevo plan</a>
+    </div>
+</div>
+
+<partial name="_MensajesTempData" />
+
+<form asp-action="Index" method="get" class="row g-2 mb-3">
+    <div class="col-md-4">
+        <input type="text" name="busqueda" value="@Model.Busqueda" class="form-control" placeholder="Código o nombre del equipo" />
+    </div>
+    <div class="col-md-2">
+        <select name="idEstado" class="form-select">
+            <option value="">Todos los estados</option>
+            <option value="1" selected="@(Model.IdEstado == 1)">Activo</option>
+            <option value="2" selected="@(Model.IdEstado == 2)">Inactivo</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="ordenarPor" class="form-select">
+            <option value="proxima" selected="@(Model.OrdenarPor is null or "proxima")">Próxima fecha</option>
+            <option value="equipo" selected="@(Model.OrdenarPor == "equipo")">Equipo</option>
+            <option value="frecuencia" selected="@(Model.OrdenarPor == "frecuencia")">Frecuencia</option>
+            <option value="id" selected="@(Model.OrdenarPor == "id")">N° de plan</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-flex align-items-center">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="soloVencidos" value="true" id="chkVencidos" checked="@Model.SoloVencidos" />
+            <label class="form-check-label" for="chkVencidos">Solo vencidos</label>
+        </div>
+    </div>
+    <div class="col-md-2 d-flex gap-1">
+        <button type="submit" class="btn btn-outline-primary flex-fill">Filtrar</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (Model.Planes.Count == 0)
+        {
+            <p class="text-muted mb-0">No se encontraron planes de mantenimiento.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Equipo</th>
+                            <th>Frecuencia</th>
+                            <th>Próxima fecha</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.Planes)
+                        {
+                            <tr class="@(p.Vencido ? "table-warning" : "")">
+                                <td class="fw-semibold">#@p.IdPlanMantenimiento</td>
+                                <td>@p.CodigoEquipo - @p.EquipoNombre</td>
+                                <td>Cada @p.Frecuencia días</td>
+                                <td class="text-nowrap">
+                                    @p.ProximaFecha.ToString("yyyy-MM-dd")
+                                    @if (p.IdEstado == 1)
+                                    {
+                                        if (p.Vencido)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-1">Vencido: se genera en el próximo ciclo</span>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted ms-1">(en @p.DiasParaProxima días)</small>
+                                        }
+                                    }
+                                </td>
+                                <td><partial name="_EstadoBadge" model="p.EstadoNombre" /></td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1">
+                                        <a asp-controller="Ordenes" asp-action="Index" asp-route-busqueda="@p.CodigoEquipo"
+                                           class="btn btn-sm btn-outline-dark">Órdenes</a>
+                                        <a asp-action="Editar" asp-route-id="@p.IdPlanMantenimiento"
+                                           class="btn btn-sm btn-outline-primary">Editar</a>
+                                        <form asp-action="Eliminar" asp-route-id="@p.IdPlanMantenimiento" method="post"
+                                              onsubmit="return confirm('¿Eliminar el plan #@p.IdPlanMantenimiento de @p.CodigoEquipo? Las órdenes ya generadas se conservan.');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <partial name="_Paginacion" model="Model.Paginacion" />
+        }
+    </div>
+</div>

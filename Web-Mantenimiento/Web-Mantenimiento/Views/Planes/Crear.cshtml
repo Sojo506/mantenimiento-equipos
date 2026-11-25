@@ -1,0 +1,54 @@
+@model Web_Mantenimiento.Models.Planes.CrearPlanViewModel
+@inject Web_Mantenimiento.Services.ApiEquipoService EquiposService
+@{
+    ViewData["Title"] = "Nuevo plan de mantenimiento";
+    var (resEquipos, _) = await EquiposService.ObtenerPaginadoAsync(null, "codigo", 1, 50);
+    var equipos = (resEquipos?.Items ?? new())
+        .Where(e => e.IdEstado != 6)
+        .Select(e => new SelectListItem($"{e.CodigoEquipo} - {e.Nombre}", e.CodigoEquipo))
+        .ToList();
+}
+
+<h2 class="mb-3">Nuevo plan de mantenimiento preventivo</h2>
+<partial name="_MensajesTempData" />
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="Crear" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="CodigoEquipo" class="form-label"></label>
+                    <select asp-for="CodigoEquipo" asp-items="equipos" class="form-select">
+                        <option value="">-- Seleccione un equipo --</option>
+                    </select>
+                    <span asp-validation-for="CodigoEquipo" class="text-danger"></span>
+                    <div class="form-text">Cada equipo admite un único plan.</div>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="Frecuencia" class="form-label"></label>
+                    <input asp-for="Frecuencia" class="form-control" type="number" min="1" max="365" />
+                    <span asp-validation-for="Frecuencia" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="ProximaFecha" class="form-label"></label>
+                    <input asp-for="ProximaFecha" class="form-control" type="date" />
+                    <span asp-validation-for="ProximaFecha" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

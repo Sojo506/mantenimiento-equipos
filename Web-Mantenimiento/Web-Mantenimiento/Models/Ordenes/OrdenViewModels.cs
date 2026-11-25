@@ -33,6 +33,10 @@ public class OrdenViewModel
     public string EstadoNombre { get; set; } = string.Empty;
     public string RowVersion { get; set; } = string.Empty;
     public List<OrdenRepuestoViewModel> Repuestos { get; set; } = new();
+
+    public bool EstaCerrada => IdEstado == 11;
+    public bool EstaVencida => !EstaCerrada && FechaLimite < DateTime.UtcNow;
+    public decimal CostoRepuestos => Repuestos.Sum(r => r.Subtotal);
 }
 
 public class BitacoraOrdenViewModel
@@ -47,6 +51,15 @@ public class BitacoraOrdenViewModel
     public string Comentario { get; set; } = string.Empty;
 }
 
+public class BandejaResumenItem
+{
+    public string Etiqueta { get; set; } = string.Empty;
+    public int Cantidad { get; set; }
+    public string Clase { get; set; } = "text-bg-secondary";
+    public int? IdEstado { get; set; }
+    public bool Vencidas { get; set; }
+}
+
 public class OrdenListadoViewModel
 {
     public string Titulo { get; set; } = "Órdenes de Trabajo";
@@ -58,4 +71,12 @@ public class OrdenListadoViewModel
     public string? OrdenarPor { get; set; }
     public int? IdEstado { get; set; }
     public string? Prioridad { get; set; }
+
+    public bool Activas { get; set; }
+
+    public bool Vencidas { get; set; }
+
+    public List<BandejaResumenItem> Resumen { get; set; } = new();
+
+    public List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> Tecnicos { get; set; } = new();
 }

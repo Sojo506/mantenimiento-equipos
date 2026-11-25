@@ -6,9 +6,49 @@
         .Where(e => int.TryParse(e.Value, out var id) && id is >= 7 and <= 12 && id != 11 && id != Model.IdEstado)
         .ToList();
     var (resRepuestos, _) = await RepuestosService.ObtenerPaginadoAsync(null, "nombre", 1, 50);
+    var repuestoPendiente = TempData["RepuestoPendiente"] as string;
+    var cantidadPendiente = TempData["CantidadPendiente"] as int? ?? 1;
     var repuestos = (resRepuestos?.Items ?? new())
-        .Select(r => new SelectListItem($"{r.CodigoRepuesto} - {r.Nombre} (Stock: {r.Stock})", r.CodigoRepuesto))
+        .Select(r => new SelectListItem($"{r.CodigoRepuesto} - {r.Nombre} (Stock: {r.Stock})", r.CodigoRepuesto, r.CodigoRepuesto == repuestoPendiente))
         .ToList();
+    var tecnicos = ViewBag.Tecnicos as List<SelectListItem>;
+}
+
+@if (tecnicos != null)
+{
+    <div class="card shadow-sm mb-3 @(Model.IdEstado == 12 ? "border-danger" : "")">
+        <div class="card-header fw-semibold d-flex justify-content-between">
+            <span>Asignación de técnico</span>
+            @if (Model.IdEstado == 12)
+            {
+                <span class="badge bg-danger">Escalada: requiere reasignación</span>
+            }
+        </div>
+        <div class="card-body">
+            <form asp-action="AsignarTecnico" method="post" class="row g-2 align-items-end">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Numero" value="@Model.Numero" />
+                <input type="hidden" name="RowVersion" value="@Model.RowVersion" />
+                <div class="col-md-5">
+                    <label class="form-label">Técnico @(Model.TecnicoNombre is null ? "" : $"(actual: {Model.TecnicoNombre})")</label>
+                    <select name="IdentificacionTecnico" class="form-select" required>
+                        <option value="">-- Seleccione --</option>
+                        @foreach (var t in tecnicos.Where(t => t.Value != Model.IdentificacionTecnico))
+                        {
+                            <option value="@t.Value">@t.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Comentario (opcional)</label>
+                    <input type="text" name="Comentario" maxlength="500" class="form-control" placeholder="Motivo de la asignación" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">@(Model.TecnicoNombre is null ? "Asignar" : "Reasignar")</button>
+                </div>
+            </form>
+        </div>
+    </div>
 }
 
 <div class="row g-3">
@@ -42,6 +82,13 @@
                 <form asp-action="AsignarRepuesto" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="Numero" value="@Model.Numero" />
+                    <input type="hidden" name="RowVersion" value="@Model.RowVersion" />
+                    @if (repuestoPendiente != null)
+                    {
+                        <div class="alert alert-warning py-1 px-2 small">
+                            Se conservó el repuesto que intentó registrar. Verifique el stock actual y confirme.
+                        </div>
+                    }
 
                     <div class="mb-2">
                         <label class="form-label">Repuesto</label>
@@ -51,7 +98,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Cantidad</label>
-                        <input type="number" name="Cantidad" value="1" min="1" max="1000" class="form-control" required />
+                        <input type="number" name="Cantidad" value="@cantidadPendiente" min="1" max="1000" class="form-control" required />
                     </div>
                     <button type="submit" class="btn btn-outline-primary btn-sm w-100">Asignar repuesto</button>
                 </form>
@@ -72,7 +119,7 @@
                     <div class="mb-2">
                         <label class="form-label">Tiempo invertido (horas)</label>
                         <input type="number" name="TiempoInvertidoFinal" step="0.25" min="0"
-                               value="@Model.TiempoInvertido" class="form-control" required />
+                               value="@Model.TiempoInvertido.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control" required />
                     </div>
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="checkbox" name="SinRepuestos" value="true" id="chkSinRep" />

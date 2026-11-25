@@ -1,0 +1,67 @@
+@model Web_Mantenimiento.Models.Ordenes.OrdenListadoViewModel
+@{
+    bool sinFiltroRapido = Model.IdEstado == null && !Model.Vencidas;
+}
+
+<div class="row row-cols-2 row-cols-md-3 row-cols-xl-6 g-2 mb-3">
+    <div class="col">
+        <a asp-action="@Model.AccionActual"
+           class="card h-100 text-decoration-none shadow-sm @(sinFiltroRapido ? "border-primary border-2" : "")">
+            <div class="card-body py-2">
+                <div class="small text-muted">Pendientes</div>
+                <div class="fs-6 fw-semibold">Todas activas</div>
+            </div>
+        </a>
+    </div>
+    @foreach (var item in Model.Resumen)
+    {
+        bool activo = item.Vencidas ? Model.Vencidas : Model.IdEstado == item.IdEstado;
+        <div class="col">
+            <a asp-action="@Model.AccionActual"
+               asp-route-idEstado="@item.IdEstado"
+               asp-route-vencidas="@(item.Vencidas ? "true" : null)"
+               class="card h-100 text-decoration-none shadow-sm @(activo ? "border-primary border-2" : "")">
+                <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">@item.Etiqueta</span>
+                    <span class="badge rounded-pill fs-6 @item.Clase">@item.Cantidad</span>
+                </div>
+            </a>
+        </div>
+    }
+</div>
+
+<form asp-action="@Model.AccionActual" method="get" class="row g-2 mb-3">
+    @if (Model.IdEstado != null)
+    {
+        <input type="hidden" name="idEstado" value="@Model.IdEstado" />
+    }
+    @if (Model.Vencidas)
+    {
+        <input type="hidden" name="vencidas" value="true" />
+    }
+    <div class="col-md-4">
+        <input type="text" name="busqueda" value="@Model.Busqueda" class="form-control"
+               placeholder="N°, equipo, descripción, técnico..." />
+    </div>
+    <div class="col-md-2">
+        <select name="prioridad" class="form-select">
+            <option value="">Toda prioridad</option>
+            @foreach (var pri in new[] { "Baja", "Media", "Alta", "Critica" })
+            {
+                <option value="@pri" selected="@(Model.Prioridad == pri)">@pri</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="ordenarPor" class="form-select">
+            <option value="limite" selected="@(Model.OrdenarPor == "limite")">Fecha límite (más urgente)</option>
+            <option value="prioridad" selected="@(Model.OrdenarPor == "prioridad")">Prioridad</option>
+            <option value="numero_desc" selected="@(Model.OrdenarPor == "numero_desc")">Número (recientes)</option>
+            <option value="fecha" selected="@(Model.OrdenarPor == "fecha")">Creación (antiguas)</option>
+        </select>
+    </div>
+    <div class="col-md-3 d-flex gap-1">
+        <button type="submit" class="btn btn-outline-primary flex-fill">Filtrar</button>
+        <a asp-action="@Model.AccionActual" class="btn btn-outline-secondary">Limpiar</a>
+    </div>
+</form>

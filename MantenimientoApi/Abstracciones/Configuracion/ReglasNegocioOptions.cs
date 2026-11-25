@@ -42,4 +42,12 @@ public class ReglasNegocioOptions
     /// Plazo en horas para resolver órdenes con prioridad Crítica (RN-08).
     /// </summary>
     public int PlazoHorasCritica { get; set; } = 24; // 1 día
+
+    public bool ProcesoAutomaticoHabilitado { get; set; } = true;
+
+    public int IntervaloMinutosProcesoAutomatico { get; set; } = 5;
+
+    public string IdentificacionUsuarioSistema { get; set; } = "USR-001";
+
+    public string PrioridadOrdenPreventiva { get; set; } = "Media";
 }

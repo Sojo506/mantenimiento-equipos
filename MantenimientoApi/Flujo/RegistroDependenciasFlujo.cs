@@ -27,6 +27,8 @@ public static class RegistroDependenciasFlujo
         services.AddScoped<IAuthServicio, AuthServicio>();
         services.AddScoped<IServicioTablero, ServicioTablero>();
         services.AddScoped<IServicioSalud, ServicioSalud>();
+        services.AddScoped<IServicioPlanMantenimiento, ServicioPlanMantenimiento>();
+        services.AddScoped<IServicioProcesoAutomatico, ServicioProcesoAutomatico>();
         services.AddScoped<IServicioFalla, ServicioFalla>();
         services.AddScoped<IServicioPrediccionFalla, ServicioPrediccionFalla>();
         services.AddScoped<IServicioReportes, ServicioReportes>();

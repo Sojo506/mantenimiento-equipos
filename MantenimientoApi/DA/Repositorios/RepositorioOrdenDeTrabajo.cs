@@ -93,6 +93,16 @@ public class RepositorioOrdenDeTrabajo : IRepositorioOrdenDeTrabajo
             .CountAsync(o => o.IdentificacionTecnico == identificacionTecnico && o.IdEstado == 9, cancellationToken);
     }
 
+    public async Task<IEnumerable<OrdenDeTrabajo>> ObtenerCriticasSinAtenderAsync(DateTime fechaCorte, CancellationToken cancellationToken = default)
+    {
+        return await _context.OrdenesDeTrabajo
+            .Where(o => o.Prioridad == "Critica" &&
+                        (o.IdEstado == 7 || o.IdEstado == 8) &&
+                        (o.Bitacoras.Max(b => (DateTime?)b.Fecha) ?? o.FechaCreacion) <= fechaCorte)
+            .OrderBy(o => o.FechaCreacion)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AgregarAsync(OrdenDeTrabajo orden, CancellationToken cancellationToken = default)
     {
         await _context.OrdenesDeTrabajo.AddAsync(orden, cancellationToken);

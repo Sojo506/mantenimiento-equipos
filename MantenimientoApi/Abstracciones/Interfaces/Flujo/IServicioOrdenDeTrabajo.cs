@@ -19,4 +19,8 @@ public interface IServicioOrdenDeTrabajo
     Task<OrdenDeTrabajoDto> CambiarEstadoAsync(int numero, CambiarEstadoOrdenDto dto, CancellationToken cancellationToken = default);
     Task<OrdenDeTrabajoDto> AsignarRepuestoAsync(int numero, AsignarRepuestoOrdenDto dto, CancellationToken cancellationToken = default);
     Task<IEnumerable<BitacoraOrden>> ObtenerHistorialBitacoraAsync(int numero, CancellationToken cancellationToken = default);
+
+    Task<OrdenDeTrabajoDto> AsignarTecnicoAsync(int numero, AsignarTecnicoOrdenDto dto, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<int>> EscalarCriticasSinAtenderAsync(CancellationToken cancellationToken = default);
 }

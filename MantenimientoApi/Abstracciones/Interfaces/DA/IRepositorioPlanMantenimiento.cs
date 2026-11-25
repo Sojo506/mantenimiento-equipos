@@ -13,5 +13,6 @@ public interface IRepositorioPlanMantenimiento
     Task<PlanDeMantenimiento?> ObtenerPorEquipoAsync(string codigoEquipo, CancellationToken cancellationToken = default);
     Task AgregarAsync(PlanDeMantenimiento plan, CancellationToken cancellationToken = default);
     Task ActualizarAsync(PlanDeMantenimiento plan, CancellationToken cancellationToken = default);
+    Task EliminarAsync(PlanDeMantenimiento plan, CancellationToken cancellationToken = default);
     Task GuardarCambiosAsync(CancellationToken cancellationToken = default);
 }

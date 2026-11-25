@@ -1,9 +1,13 @@
 using Web_Mantenimiento.Http;
+using Web_Mantenimiento.Infraestructura;
 using Web_Mantenimiento.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.ModelBinderProviders.Insert(0, new DecimalInvarianteModelBinderProvider());
+});
 
 builder.Services.AddHttpContextAccessor();
 
@@ -48,6 +52,7 @@ builder.Services.AddScoped<ApiEquipoService>();
 builder.Services.AddScoped<ApiRepuestoService>();
 builder.Services.AddScoped<ApiOrdenService>();
 builder.Services.AddScoped<ApiTableroService>();
+builder.Services.AddScoped<ApiPlanService>();
 builder.Services.AddScoped<ApiFallaService>();
 builder.Services.AddScoped<ApiReporteService>();
 

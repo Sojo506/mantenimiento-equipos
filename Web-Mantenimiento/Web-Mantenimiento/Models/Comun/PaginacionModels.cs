@@ -16,6 +16,8 @@ public class PaginacionViewModel
     public string? Busqueda { get; set; }
     public string? OrdenarPor { get; set; }
     public string Accion { get; set; } = "Index";
+
+    public Dictionary<string, string> Filtros { get; set; } = new();
     public string? Controlador { get; set; }
 }
 

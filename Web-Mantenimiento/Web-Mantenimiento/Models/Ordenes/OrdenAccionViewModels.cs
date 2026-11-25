@@ -62,4 +62,36 @@ public class AsignarRepuestoOrdenViewModel
 
     [Range(1, 1000, ErrorMessage = "La cantidad debe ser mayor a 0.")]
     public int Cantidad { get; set; } = 1;
+
+    public string? RowVersion { get; set; }
+}
+
+public class AsignarTecnicoOrdenViewModel
+{
+    public int Numero { get; set; }
+
+    [Required(ErrorMessage = "Debe seleccionar un técnico.")]
+    [Display(Name = "Técnico")]
+    public string IdentificacionTecnico { get; set; } = string.Empty;
+
+    [StringLength(500, ErrorMessage = "El comentario no puede superar 500 caracteres.")]
+    public string? Comentario { get; set; }
+
+    [Required]
+    public string RowVersion { get; set; } = string.Empty;
+
+    public string? Volver { get; set; }
+}
+
+public class AtenderOrdenViewModel
+{
+    public int Numero { get; set; }
+
+    [Range(7, 12)]
+    public int NuevoEstado { get; set; }
+
+    [Required]
+    public string RowVersion { get; set; } = string.Empty;
+
+    public string? Comentario { get; set; }
 }

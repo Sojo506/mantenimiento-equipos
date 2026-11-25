@@ -19,7 +19,8 @@
                        asp-route-pagina="@(Model.Meta.PageNumber - 1)"
                        asp-route-tamanoPagina="@Model.Meta.PageSize"
                        asp-route-busqueda="@Model.Busqueda"
-                       asp-route-ordenarPor="@Model.OrdenarPor">
+                       asp-route-ordenarPor="@Model.OrdenarPor"
+                       asp-all-route-data="Model.Filtros">
                         Anterior
                     </a>
                 </li>
@@ -33,7 +34,8 @@
                            asp-route-pagina="@i"
                            asp-route-tamanoPagina="@Model.Meta.PageSize"
                            asp-route-busqueda="@Model.Busqueda"
-                           asp-route-ordenarPor="@Model.OrdenarPor">
+                           asp-route-ordenarPor="@Model.OrdenarPor"
+                           asp-all-route-data="Model.Filtros">
                             @i
                         </a>
                     </li>
@@ -46,7 +48,8 @@
                        asp-route-pagina="@(Model.Meta.PageNumber + 1)"
                        asp-route-tamanoPagina="@Model.Meta.PageSize"
                        asp-route-busqueda="@Model.Busqueda"
-                       asp-route-ordenarPor="@Model.OrdenarPor">
+                       asp-route-ordenarPor="@Model.OrdenarPor"
+                       asp-all-route-data="Model.Filtros">
                         Siguiente
                     </a>
                 </li>

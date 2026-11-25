@@ -1,13 +1,27 @@
 @model List<Web_Mantenimiento.Models.Ordenes.BitacoraOrdenViewModel>
 @{
     var numeroOrden = ViewData["NumeroOrden"];
+    var orden = ViewBag.Orden as Web_Mantenimiento.Models.Ordenes.OrdenViewModel;
     ViewData["Title"] = $"Bitácora Orden #{numeroOrden}";
+
+    static string Duracion(TimeSpan t)
+    {
+        if (t.TotalMinutes < 1) return "menos de 1 min";
+        if (t.TotalHours < 1) return $"{(int)t.TotalMinutes} min";
+        if (t.TotalDays < 1) return $"{(int)t.TotalHours} h {t.Minutes} min";
+        return $"{(int)t.TotalDays} d {t.Hours} h";
+    }
+
+    static bool EsAutomatico(string comentario) =>
+        comentario.Contains("(RN-01)") || comentario.Contains("(RN-06)");
+
+    var duracionTotal = Model.Count > 1 ? Model[^1].Fecha - Model[0].Fecha : TimeSpan.Zero;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h2 class="mb-0">Bitácora — Orden #@numeroOrden</h2>
-        <p class="text-muted mb-0">Historial cronológico inmutable de transiciones y auditoría</p>
+        <p class="text-muted mb-0">Historial cronológico e inmutable de transiciones de estado</p>
     </div>
     <div class="d-flex gap-2">
         <a asp-action="Detalle" asp-route-numero="@numeroOrden" class="btn btn-outline-primary">Ir al detalle</a>
@@ -17,6 +31,20 @@
 
 <partial name="_MensajesTempData" />
 
+@if (orden != null)
+{
+    <div class="card shadow-sm mb-3">
+        <div class="card-body d-flex flex-wrap gap-4">
+            <div><div class="small text-muted">Equipo</div><strong>@orden.CodigoEquipo</strong> - @orden.EquipoNombre</div>
+            <div><div class="small text-muted">Tipo / Prioridad</div>@orden.TipoOrdenNombre · <strong>@orden.Prioridad</strong></div>
+            <div><div class="small text-muted">Estado actual</div><partial name="_EstadoBadge" model="orden.EstadoNombre" /></div>
+            <div><div class="small text-muted">Técnico</div>@(orden.TecnicoNombre ?? "Sin asignar")</div>
+            <div><div class="small text-muted">Eventos</div>@Model.Count</div>
+            <div><div class="small text-muted">Duración registrada</div>@Duracion(duracionTotal)</div>
+        </div>
+    </div>
+}
+
 <div class="card shadow-sm">
     <div class="card-body">
         @if (Model.Count == 0)
@@ -25,33 +53,38 @@
         }
         else
         {
-            <div class="table-responsive">
-                <table class="table table-striped align-middle mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Usuario</th>
-                            <th>Transición de estado</th>
-                            <th>Comentario</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model.OrderByDescending(b => b.Fecha))
-                        {
-                            <tr>
-                                <td class="text-nowrap">@item.Fecha.ToString("yyyy-MM-dd HH:mm")</td>
-                                <td>@item.NombreUsuario <small class="text-muted">(@item.Identificacion)</small></td>
-                                <td class="text-nowrap">
-                                    <partial name="_EstadoBadge" model="item.EstadoAnterior" />
-                                    <span class="mx-1">&rarr;</span>
-                                    <partial name="_EstadoBadge" model="item.EstadoNuevo" />
-                                </td>
-                                <td>@item.Comentario</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+            <ol class="list-unstyled mb-0 bitacora-timeline">
+                @for (var i = 0; i < Model.Count; i++)
+                {
+                    var item = Model[i];
+                    var automatico = EsAutomatico(item.Comentario);
+                    <li class="position-relative ps-4 pb-4 @(i < Model.Count - 1 ? "border-start border-2" : "")" style="margin-left: .5rem">
+                        <span class="position-absolute top-0 start-0 translate-middle rounded-circle @(automatico ? "bg-danger" : "bg-primary")"
+                              style="width: 14px; height: 14px; margin-left: -1px"></span>
+
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1" style="margin-top: -.6rem">
+                            <span class="fw-semibold">@item.Fecha.ToString("yyyy-MM-dd HH:mm")</span>
+                            @if (i > 0)
+                            {
+                                <span class="badge text-bg-light border">+@Duracion(item.Fecha - Model[i - 1].Fecha)</span>
+                            }
+                            <span>
+                                <partial name="_EstadoBadge" model="item.EstadoAnterior" />
+                                <span class="mx-1">&rarr;</span>
+                                <partial name="_EstadoBadge" model="item.EstadoNuevo" />
+                            </span>
+                            @if (automatico)
+                            {
+                                <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">Automático</span>
+                            }
+                        </div>
+                        <div class="small text-muted mb-1">
+                            @(automatico ? "Sistema" : item.NombreUsuario) <span>(@item.Identificacion)</span>
+                        </div>
+                        <div>@item.Comentario</div>
+                    </li>
+                }
+            </ol>
         }
     </div>
 </div>

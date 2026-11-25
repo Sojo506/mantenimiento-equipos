@@ -98,6 +98,44 @@ public abstract class ApiClientBase
                 : (false, await ObtenerErrorAsync(resp, ct));
         });
 
+    protected async Task<RespuestaApi<TRes>> EnviarConEstadoAsync<TReq, TRes>(
+        HttpMethod metodo, string url, TReq cuerpo, string? ifMatch = null, CancellationToken ct = default)
+    {
+        try
+        {
+            using var req = new HttpRequestMessage(metodo, url)
+            {
+                Content = JsonContent.Create(cuerpo, options: JsonOpciones)
+            };
+            if (!string.IsNullOrWhiteSpace(ifMatch))
+                req.Headers.TryAddWithoutValidation("If-Match", $"\"{ifMatch.Trim('"')}\"");
+
+            var resp = await HttpClient.SendAsync(req, ct);
+            if (!resp.IsSuccessStatusCode)
+            {
+                return new RespuestaApi<TRes>
+                {
+                    Error = await ObtenerErrorAsync(resp, ct),
+                    CodigoEstado = resp.StatusCode
+                };
+            }
+
+            var datos = resp.StatusCode == HttpStatusCode.NoContent
+                ? default
+                : await resp.Content.ReadFromJsonAsync<TRes>(JsonOpciones, ct);
+
+            return new RespuestaApi<TRes> { Datos = datos, CodigoEstado = resp.StatusCode };
+        }
+        catch (HttpRequestException)
+        {
+            return new RespuestaApi<TRes> { Error = "No fue posible conectar con la API." };
+        }
+        catch (JsonException)
+        {
+            return new RespuestaApi<TRes> { Error = "La API devolvió una respuesta inválida." };
+        }
+    }
+
     private static HttpRequestMessage CrearPutRequest<TReq>(
         string url, TReq cuerpo, string? ifMatch)
     {

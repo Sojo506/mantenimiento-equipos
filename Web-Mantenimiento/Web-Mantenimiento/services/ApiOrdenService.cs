@@ -20,7 +20,9 @@ public class ApiOrdenService : ApiClientBase
         string? identificacionSolicitante = null,
         int pagina = 1,
         int tamanoPagina = 10,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        bool activas = false,
+        bool vencidas = false)
     {
         var p = new Dictionary<string, string?>
         {
@@ -34,6 +36,8 @@ public class ApiOrdenService : ApiClientBase
         if (!string.IsNullOrWhiteSpace(prioridad)) p["prioridad"] = prioridad.Trim();
         if (!string.IsNullOrWhiteSpace(identificacionTecnico)) p["identificacionTecnico"] = identificacionTecnico.Trim();
         if (!string.IsNullOrWhiteSpace(identificacionSolicitante)) p["identificacionSolicitante"] = identificacionSolicitante.Trim();
+        if (activas) p["activas"] = "true";
+        if (vencidas) p["vencidas"] = "true";
 
         var url = QueryHelpers.AddQueryString("api/Ordenes", p);
         return GetPaginadoAsync<OrdenViewModel>(url, ct);
@@ -60,7 +64,16 @@ public class ApiOrdenService : ApiClientBase
         return PostAsync<object, OrdenViewModel>("api/Ordenes", cuerpo, ct);
     }
 
-    public Task<(OrdenViewModel? Datos, string? Error)> CambiarEstadoAsync(
+    public async Task<int> ContarAsync(
+        int? idEstado = null, string? identificacionTecnico = null,
+        bool activas = false, bool vencidas = false, CancellationToken ct = default)
+    {
+        var (res, _) = await ObtenerPaginadoAsync(
+            null, null, idEstado, null, identificacionTecnico, null, 1, 1, ct, activas, vencidas);
+        return res?.Paginacion.TotalItems ?? 0;
+    }
+
+    public Task<RespuestaApi<OrdenViewModel>> CambiarEstadoAsync(
         CambiarEstadoOrdenViewModel modelo, string identificacionUsuario, CancellationToken ct = default)
     {
         var cuerpo = new
@@ -74,15 +87,30 @@ public class ApiOrdenService : ApiClientBase
             modelo.RowVersion
         };
 
-        var ifMatch = string.IsNullOrWhiteSpace(modelo.RowVersion) ? null : $"\"{modelo.RowVersion}\"";
-        return PutAsync<object, OrdenViewModel>($"api/Ordenes/{modelo.Numero}/estado", cuerpo, ifMatch, ct);
+        return EnviarConEstadoAsync<object, OrdenViewModel>(
+            HttpMethod.Put, $"api/Ordenes/{modelo.Numero}/estado", cuerpo, modelo.RowVersion, ct);
     }
 
-    public Task<(OrdenViewModel? Datos, string? Error)> AsignarRepuestoAsync(
+    public Task<RespuestaApi<OrdenViewModel>> AsignarRepuestoAsync(
         AsignarRepuestoOrdenViewModel modelo, CancellationToken ct = default)
     {
-        var cuerpo = new { modelo.CodigoRepuesto, modelo.Cantidad };
-        return PostAsync<object, OrdenViewModel>($"api/Ordenes/{modelo.Numero}/repuestos", cuerpo, ct);
+        var cuerpo = new { modelo.CodigoRepuesto, modelo.Cantidad, modelo.RowVersion };
+        return EnviarConEstadoAsync<object, OrdenViewModel>(
+            HttpMethod.Post, $"api/Ordenes/{modelo.Numero}/repuestos", cuerpo, modelo.RowVersion, ct);
+    }
+
+    public Task<RespuestaApi<OrdenViewModel>> AsignarTecnicoAsync(
+        AsignarTecnicoOrdenViewModel modelo, string identificacionUsuario, CancellationToken ct = default)
+    {
+        var cuerpo = new
+        {
+            modelo.IdentificacionTecnico,
+            IdentificacionUsuario = identificacionUsuario,
+            Comentario = string.IsNullOrWhiteSpace(modelo.Comentario) ? null : modelo.Comentario.Trim(),
+            modelo.RowVersion
+        };
+        return EnviarConEstadoAsync<object, OrdenViewModel>(
+            HttpMethod.Put, $"api/Ordenes/{modelo.Numero}/asignacion", cuerpo, modelo.RowVersion, ct);
     }
 
     public Task<(List<BitacoraOrdenViewModel>? Datos, string? Error)> ObtenerHistorialAsync(

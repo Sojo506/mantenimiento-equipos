@@ -1,6 +1,7 @@
 
 using API.Middleware;
 using API.Restricciones;
+using API.Trabajos;
 using DA;
 using Flujo;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -162,6 +163,8 @@ builder.Services.AddOpenApi(options =>
 
 builder.Services.AgregarCapaDatos(builder.Configuration);
 builder.Services.AgregarCapaFlujo(builder.Configuration);
+
+builder.Services.AddHostedService<ProcesadorReglasAutomaticas>();
 
 // ==========================================
 // CONSTRUCCIÓN DE LA APLICACIÓN

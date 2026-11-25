@@ -60,6 +60,12 @@ public class RepositorioPlanMantenimiento : IRepositorioPlanMantenimiento
         return Task.CompletedTask;
     }
 
+    public Task EliminarAsync(PlanDeMantenimiento plan, CancellationToken cancellationToken = default)
+    {
+        _context.PlanesDeMantenimiento.Remove(plan);
+        return Task.CompletedTask;
+    }
+
     public async Task GuardarCambiosAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

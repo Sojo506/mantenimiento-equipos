@@ -62,4 +62,8 @@ public class ApiEquipoService : ApiClientBase
     public Task<(bool Datos, string? Error)> EliminarAsync(
         string codigoEquipo, CancellationToken ct = default) =>
         DeleteAsync($"api/Equipos/{Uri.EscapeDataString(codigoEquipo)}", ct);
+
+    public Task<(PrediccionFallaEquipoViewModel? Datos, string? Error)> ObtenerPrediccionAsync(
+        string codigoEquipo, CancellationToken ct = default) =>
+        GetAsync<PrediccionFallaEquipoViewModel>($"api/Equipos/{Uri.EscapeDataString(codigoEquipo)}/prediccion", ct);
 }

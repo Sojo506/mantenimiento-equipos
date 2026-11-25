@@ -16,10 +16,33 @@ public class RepositorioFallaRegistrada : IRepositorioFallaRegistrada
         _context = context;
     }
 
+    public async Task<IEnumerable<FallaRegistrada>> ObtenerTodasAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.FallasRegistradas
+            .Include(f => f.Equipo)
+                .ThenInclude(e => e!.Estado)
+            .Include(f => f.TipoGravedad)
+            .OrderByDescending(f => f.Fecha)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<FallaRegistrada?> ObtenerPorIdAsync(int idFalla, CancellationToken cancellationToken = default)
+    {
+        return await _context.FallasRegistradas
+            .Include(f => f.Equipo)
+                .ThenInclude(e => e!.Estado)
+            .Include(f => f.TipoGravedad)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == idFalla, cancellationToken);
+    }
+
     public async Task<IEnumerable<FallaRegistrada>> ObtenerPorEquipoAsync(string codigoEquipo, CancellationToken cancellationToken = default)
     {
         return await _context.FallasRegistradas
             .Where(f => f.CodigoEquipo == codigoEquipo)
+            .Include(f => f.Equipo)
+                .ThenInclude(e => e!.Estado)
             .Include(f => f.TipoGravedad)
             .OrderByDescending(f => f.Fecha)
             .AsNoTracking()

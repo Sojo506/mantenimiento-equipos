@@ -96,3 +96,19 @@ public class ActualizarEquipoViewModel
     [Display(Name = "Estado")]
     public int IdEstado { get; set; }
 }
+
+public class PrediccionFallaEquipoViewModel
+{
+    public string CodigoEquipo { get; set; } = string.Empty;
+    public string EquipoNombre { get; set; } = string.Empty;
+    public string EstadoActual { get; set; } = string.Empty;
+    public float ProbabilidadFalla30Dias { get; set; }
+    public decimal PorcentajeRiesgo { get; set; }
+    public bool PrediceFalla { get; set; }
+    public string NivelRiesgo { get; set; } = "Bajo";
+    public int FallasUltimos6Meses { get; set; }
+    public int TotalOrdenesCorrectivas { get; set; }
+    public float AntiguedadMeses { get; set; }
+    public float HorasMantenimientoAcumuladas { get; set; }
+    public string Recomendacion { get; set; } = string.Empty;
+}

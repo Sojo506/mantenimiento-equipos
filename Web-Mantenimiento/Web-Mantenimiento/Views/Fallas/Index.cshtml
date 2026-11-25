@@ -1,0 +1,97 @@
+@model List<Web_Mantenimiento.Models.Fallas.FallaViewModel>
+@{
+    ViewData["Title"] = "Fallas Registradas";
+    var filtroEquipo = ViewData["CodigoEquipoFiltro"] as string;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+        <h2 class="mb-0">Reporte e Historial de Fallas</h2>
+        <p class="text-muted mb-0">
+            Registro de incidencias operativas y monitoreo de reincidencia (RN-03: paso automático a En Riesgo).
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-controller="Ordenes" asp-action="Index" class="btn btn-outline-secondary">Ver solicitudes / órdenes</a>
+        <a asp-action="Crear" asp-route-codigoEquipo="@filtroEquipo" class="btn btn-danger">Reportar falla</a>
+    </div>
+</div>
+
+<partial name="_MensajesTempData" />
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Filtrar por código de equipo</label>
+                <input type="text" name="codigoEquipo" value="@filtroEquipo" class="form-control" placeholder="Ej. EQ-004" />
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary">Filtrar</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (Model.Count == 0)
+        {
+            <p class="text-muted mb-0">No se encontraron fallas registradas.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Equipo</th>
+                            <th>Estado Equipo</th>
+                            <th>Gravedad</th>
+                            <th>Descripción</th>
+                            <th>Orden Asociada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in Model)
+                        {
+                            var badgeGravedad = f.GravedadNombre switch
+                            {
+                                "Critica" => "bg-danger",
+                                "Alta" => "bg-warning text-dark",
+                                "Media" => "bg-info text-dark",
+                                _ => "bg-secondary"
+                            };
+                            <tr>
+                                <td>@f.Id</td>
+                                <td>@f.Fecha.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    <a asp-controller="Equipos" asp-action="Detalle" asp-route-codigoEquipo="@f.CodigoEquipo" class="fw-semibold">
+                                        @f.CodigoEquipo
+                                    </a>
+                                    <div class="small text-muted">@f.EquipoNombre</div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(f.EstadoEquipoNombre))
+                                    {
+                                        <partial name="_EstadoBadge" model="f.EstadoEquipoNombre" />
+                                    }
+                                </td>
+                                <td><span class="badge @badgeGravedad">@f.GravedadNombre</span></td>
+                                <td>@f.Descripcion</td>
+                                <td>
+                                    <a asp-controller="Ordenes" asp-action="Detalle" asp-route-numero="@f.NumeroOrden" class="btn btn-sm btn-outline-dark">
+                                        Orden #@f.NumeroOrden
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

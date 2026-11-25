@@ -7,6 +7,8 @@ namespace Abstracciones.Interfaces.DA;
 /// </summary>
 public interface IRepositorioFallaRegistrada
 {
+    Task<IEnumerable<FallaRegistrada>> ObtenerTodasAsync(CancellationToken cancellationToken = default);
+    Task<FallaRegistrada?> ObtenerPorIdAsync(int idFalla, CancellationToken cancellationToken = default);
     Task<IEnumerable<FallaRegistrada>> ObtenerPorEquipoAsync(string codigoEquipo, CancellationToken cancellationToken = default);
     Task<int> ContarFallasUltimosMesesAsync(string codigoEquipo, int meses, CancellationToken cancellationToken = default);
     Task AgregarAsync(FallaRegistrada falla, CancellationToken cancellationToken = default);

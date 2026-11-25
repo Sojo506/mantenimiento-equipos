@@ -20,11 +20,16 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
-    - name: Restaurar dependencias NuGet
-      run: dotnet restore MantenimientoApi/MantenimientoApi.slnx
+    - name: Restaurar dependencias NuGet (API y Web)
+      run: |
+        dotnet restore MantenimientoApi/MantenimientoApi.slnx
+        dotnet restore Web-Mantenimiento/Web-Mantenimiento.slnx
 
-    - name: Compilar solución en modo Release
+    - name: Compilar solución API en modo Release
       run: dotnet build MantenimientoApi/MantenimientoApi.slnx --no-restore --configuration Release
 
-    - name: Ejecutar pruebas unitarias
+    - name: Compilar solución Web MVC en modo Release
+      run: dotnet build Web-Mantenimiento/Web-Mantenimiento.slnx --no-restore --configuration Release
+
+    - name: Ejecutar pruebas unitarias y de integración
       run: dotnet test MantenimientoApi/MantenimientoApi.slnx --no-build --configuration Release --verbosity normal

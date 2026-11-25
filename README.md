@@ -4,197 +4,172 @@
 ![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
 ![C# 13](https://img.shields.io/badge/C%23-13-239120?logo=csharp)
 ![EF Core 10](https://img.shields.io/badge/EF%20Core-10.0-6C2D82)
-![Architecture](https://img.shields.io/badge/Architecture-Clean%204--Layers-007ACC)
+![ML.NET](https://img.shields.io/badge/ML.NET-4.0-FF6F00)
+![Architecture](https://img.shields.io/badge/Architecture-Clean%204--Layers%20%2B%20MVC-007ACC)
 
 Proyecto Académico para el curso **SC-701 Programación Avanzada Web**  
-**Universidad Fidélitas** — **Avance 1 (Semana 7)**  
-**Estudiante:** Fabián Sojo  
+**Universidad Fidélitas** — **Avance 2 (Semana 12) / Entrega Final (Semana 15)**  
 
 ---
 
-## 1. Descripción del Proyecto
+## 1. Descripción del Sistema
 
-El **Sistema de Gestión de Mantenimiento de Equipos** es una solución integral orientada al entorno industrial y hospitalario para la administración del ciclo de vida de maquinaria, planeación de mantenimientos preventivos y correctivos, control riguroso de inventario de repuestos con alertas de stock crítico y auditoría inmutable de eventos.
-
-La solución está construida bajo una **Arquitectura Limpia desacoplada en 4 capas**, garantizando separación estricta de responsabilidades, alta testabilidad, concurrencia optimista y cumplimiento de las mejores prácticas de ingeniería de software.
+El **Sistema de Gestión de Mantenimiento de Equipos** es una plataforma web empresarial compuesta por un backend RESTful (**`MantenimientoApi`**) en **Arquitectura Limpia de 4 capas** y un frontend desacoplado en **ASP.NET Core MVC (`Web-Mantenimiento`)**. Permite administrar el parque de maquinaria, órdenes de trabajo preventivas y correctivas, control de inventario de repuestos con alertas de stock mínimo, reporte de fallas con transición automática a estado de riesgo (**RN-03**), predicción de probabilidad de falla a 30 días con **ML.NET**, bitácora de auditoría inmutable y exportación de reportes analíticos en formato **CSV**.
 
 ---
 
-## 2. Arquitectura de Software (Clean Architecture)
-
-El backend de la solución (`MantenimientoApi`) está segmentado en 4 proyectos desacoplados con dependencias unidireccionales:
+## 2. Arquitectura de la Solución
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                       Capa de API                           │
-│  (Controladores REST, Minimal APIs, Scalar Docs, RFC 7807)  │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ referencia
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      Capa de Flujo                          │
-│     (Lógica de Negocio, Máquina de Estados, RN-01 a RN-09)  │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ referencia
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      Capa de DA                             │
-│     (DbContext, Fluent API, Repositorios, Migraciones EF)   │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ referencia
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  Capa de Abstracciones                      │
-│     (Entidades de Dominio, DTOs, Interfaces, Excepciones)   │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                  Web-Mantenimiento (ASP.NET Core MVC)                   │
+│  (IHttpClientFactory + JwtDelegatingHandler + Sesión Cookie HttpOnly)   │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │ HTTP / JSON / CSV (Bearer JWT)
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       Capa de API (MantenimientoApi)                    │
+│   (Controllers REST, JWT Auth, Scalar OpenAPI, RFC 7807, ETag / 304)    │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │ referencia
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                              Capa de Flujo                              │
+│     (Lógica de Negocio, Máquina de Estados, Reglas RN, ML.NET 4.0)      │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │ referencia
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                               Capa de DA                                │
+│  (MantenimientoDbContext, Fluent API 3FN, Repositorios, Migraciones, SP)│
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │ referencia
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          Capa de Abstracciones                          │
+│         (Entidades, DTOs, Interfaces DA/Flujo, Excepciones, Hash)       │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Proyectos de la Solución
-
-| Proyecto | Responsabilidad Arquitectural | Tecnologías Clave |
-| :--- | :--- | :--- |
-| **`Abstracciones`** | Núcleo transversal con entidades de dominio, contratos (`Interfaces`), DTOs de entrada y salida, atributos de validación y excepciones de negocio personalizadas. | .NET 10, C# 13, DataAnnotations |
-| **`DA` (Data Access)** | Única capa con acceso directo a la base de datos SQL Server mediante Entity Framework Core. Mapeo estricto con Fluent API (3FN), repositorios especializados, semilla estática y Stored Procedure `sp_ReporteConsumoRepuestosPorPeriodo`. | EF Core 10, SQL Server, Migraciones |
-| **`Flujo` (Business Logic)** | Orquestación de reglas de negocio (RN-01 a RN-09), máquina de estados de órdenes, cálculo automático de fechas límites según prioridad, validación de stock y control de concurrencia optimista. | Inyección de Dependencias, Options Pattern |
-| **`API` (Presentation)** | Exposición de endpoints RESTful mediante controladores y Minimal APIs, documentación interactiva Scalar, middleware de errores RFC 7807 (`application/problem+json`), paginación (`X-Pagination`), caché HTTP 304 (`ETag`) y página de estado `wwwroot`. | ASP.NET Core 10, Scalar.AspNetCore, CORS |
-| **`Flujo.Tests`** | Suite de pruebas unitarias automatizadas que cubren las reglas de negocio, concurrencia y restricciones operativas. | xUnit, Moq, Coverlet |
+Para conocer en detalle las decisiones arquitectónicas y de seguridad, consulte [DECISIONES.md](file:///home/sojo506/Documents/University/PrograAvanzadaWeb/mantenimiento-equipos/DECISIONES.md).
 
 ---
 
-## 3. Modelo de Datos y Normalización (3FN)
+## 3. Diagrama Entidad-Relación (Modelo Relacional en 3FN)
 
-El diseño relacional se encuentra normalizado en **Tercera Forma Normal (3FN)** y mapeado al 100% mediante Fluent API en `DA/Configuraciones`:
+```mermaid
+erDiagram
+    ESTADO_TB ||--o{ USUARIO_TB : "define estado"
+    ESTADO_TB ||--o{ EQUIPO_TB : "define estado (3..6)"
+    ESTADO_TB ||--o{ REPUESTO_TB : "define estado"
+    ESTADO_TB ||--o{ ORDEN_TB : "define estado (7..12)"
+    ESTADO_TB ||--o{ PLAN_MANTENIMIENTO_TB : "define estado"
 
-- **Catálogos Paramétricos**: `ESTADO_TB`, `TIPO_USUARIO_TB`, `TIPO_EQUIPO_TB`, `MARCA_TB`, `MODELO_TB`, `UBICACION_TB`, `ESPECIALIDAD_TB`, `TIPO_ORDEN_TB`, `TIPO_GRAVEDAD_TB`.
-- **Entidades de Operación**: `USUARIO_TB`, `EQUIPO_TB`, `REPUESTO_TB`, `ORDEN_TB`, `ORDEN_REPUESTO_TB`, `BITACORA_ORDEN_TB`, `PLAN_MANTENIMIENTO_TB`, `DETALLE_PLAN_TB`, `FALLA_REGISTRADA_TB`.
-- **Concurrencia Optimista**: Las tablas `REPUESTO_TB` y `ORDEN_TB` contienen un token nativo `ROW_VERSION` (`rowversion` / `byte[]`) configurado con `.IsRowVersion()` para prevenir sobrescritura concurrente de datos.
-- **Auditoría Inmutable**: `BITACORA_ORDEN_TB` almacena el histórico cronológico de cada transición de estado de orden sin métodos de actualización o borrado en su repositorio.
-- **Stored Procedure Integrado**: Migración inicial incluye `sp_ReporteConsumoRepuestosPorPeriodo` para reportería analítica de costos y cantidades consumidas.
+    TIPO_USUARIO_TB ||--o{ USUARIO_TB : "asigna rol (1..4)"
+    ESPECIALIDAD_TB ||--o{ USUARIO_TB : "especializa técnico"
+
+    TIPO_EQUIPO_TB ||--o{ EQUIPO_TB : "clasifica"
+    MARCA_TB ||--o{ EQUIPO_TB : "fabrica"
+    MODELO_TB ||--o{ EQUIPO_TB : "especifica"
+    UBICACION_TB ||--o{ EQUIPO_TB : "ubica físicamente"
+
+    EQUIPO_TB ||--o{ ORDEN_TB : "recibe mantenimiento"
+    EQUIPO_TB ||--o{ FALLA_REGISTRADA_TB : "registra incidencias"
+    EQUIPO_TB ||--o{ PLAN_MANTENIMIENTO_TB : "programa preventivo"
+
+    USUARIO_TB ||--o{ ORDEN_TB : "solicita / atiende"
+    USUARIO_TB ||--o{ BITACORA_ORDEN_TB : "audita transición"
+
+    TIPO_ORDEN_TB ||--o{ ORDEN_TB : "Preventiva / Correctiva"
+    ORDEN_TB ||--o{ ORDEN_REPUESTO_TB : "consume"
+    REPUESTO_TB ||--o{ ORDEN_REPUESTO_TB : "descuenta stock"
+    ORDEN_TB ||--o{ BITACORA_ORDEN_TB : "historial inmutable"
+    ORDEN_TB ||--o{ FALLA_REGISTRADA_TB : "asocia falla"
+    TIPO_GRAVEDAD_TB ||--o{ FALLA_REGISTRADA_TB : "clasifica severidad"
+```
 
 ---
 
-## 4. Configuración Segura de Secretos (Zero Secrets)
+## 4. Tabla de Cumplimiento y Trazabilidad (Sección 5)
 
-Por estrictas normas de seguridad, **el repositorio no contiene credenciales de base de datos ni secretos en texto plano**.
+| Código / Módulo | Descripción del Requisito / Regla de Negocio | Implementación en Backend (`MantenimientoApi`) | Implementación en Frontend (`Web-Mantenimiento`) | Pruebas Automatizadas (`Flujo.Tests`) |
+| :--- | :--- | :--- | :--- | :--- |
+| **RN-02** | Cierre de orden exige `TiempoInvertido > 0` y al menos un repuesto o justificación `SinRepuestos`. | `ServicioOrdenDeTrabajo.CambiarEstadoAsync` | `Views/Ordenes/_OrdenAcciones.cshtml` | `CambiarEstadoAsync_ACerradaSinRepuestosNiJustificacion_LanzaReglaNegocioException_RN02` |
+| **RN-03** | Al acumular `>= 3` fallas en los últimos 6 meses, el equipo pasa automáticamente a estado `En Riesgo` (`IdEstado = 5`). | `ServicioFalla.RegistrarAsync` + `FallasController` | `FallasController` + `Views/Fallas/Crear.cshtml` | `RegistrarAsync_TerceraFallaEnUltimos6Meses_CambiaEstadoEquipoAEnRiesgo_RN03` |
+| **RN-04** | Un equipo `Dado de Baja` no admite órdenes ni fallas; no se permite más de una orden correctiva abierta simultánea por equipo. | `ServicioOrdenDeTrabajo.CrearAsync` + `ServicioFalla.RegistrarAsync` | `OrdenesController.Crear` + `FallasController.Crear` | `CrearAsync_CorrectivaConOrdenAbiertaExistente_LanzaReglaNegocioException_RN04` |
+| **RN-05** | Descuento automático de stock al asignar repuestos; prohibición de stock negativo. | `ServicioOrdenDeTrabajo.AsignarRepuestoAsync` + `ServicioRepuesto` | `RepuestosController` + `OrdenesController.AsignarRepuesto` | `AsignarRepuestoAsync_StockInsuficiente_LanzaReglaNegocioException_RN05` |
+| **RN-07** | Un técnico no puede tener más de `MaxOrdenesEnProcesoPorTecnico` (3) órdenes en estado `En Proceso` simultáneamente. | `ServicioOrdenDeTrabajo.CrearAsync` / `CambiarEstadoAsync` | `OrdenesController.BandejaTecnico` | Validación de umbral en `ServicioOrdenDeTrabajo` |
+| **RN-08** | Máquina de estados estricta y cálculo automático de `FechaLimite` según prioridad (`Critica`, `Alta`, `Media`, `Baja`). | `ServicioOrdenDeTrabajo` (`TransicionesValidas`) | `Views/Ordenes/Detalle.cshtml` | `CambiarEstadoAsync_TransicionInvalidaDeAbiertaAEnProcesoDirecto_LanzaConflictoException_RN08` |
+| **RN-09** | Una orden en estado `Cerrada` (11) es estrictamente inmutable y la bitácora no permite edición ni borrado. | `ServicioOrdenDeTrabajo.ActualizarAsync` + `RepositorioBitacoraOrden` | `Views/Ordenes/Bitacora.cshtml` | `ActualizarAsync_OrdenCerradaEsInmutable_LanzaConflictoException_RN09` |
+| **Seguridad JWT + Roles** | Login con PBKDF2-SHA256, emisión de JWT Bearer, políticas por rol (`Administrador`, `Supervisor`, `Tecnico`, `Solicitante`). | `AuthController`, `AuthServicio`, `[Authorize(Roles=...)]` | `AccountController`, `JwtDelegatingHandler`, `[AutorizacionSesion]`, `_Layout.cshtml` | `AuthYProblemDetailsIntegrationTests` (`401`, `403`, `200`) |
+| **Concurrencia y Caché** | Tokens `RowVersion`, encabezados `ETag` (`304 Not Modified`) e `If-Match` (`409 Conflict`). | `EquiposController`, `RepuestosController`, `OrdenesController` | `ApiClientBase` (`If-Match`), `RepuestosController.Editar` | `ActualizarAsync_ConcurrenciaDesactualizada_LanzaConflictoException` |
+| **ML.NET (30 días)** | Predicción de probabilidad de falla a 30 días con clasificación binaria (`SdcaLogisticRegression`). | `ServicioPrediccionFalla` + `GET /api/equipos/{codigo}/prediccion` | Tarjeta ML.NET en `Views/Equipos/Detalle.cshtml` | `PredecirFallaEquipoAsync_EquipoConAltaReincidencia_RetornaProbabilidadMayorAEquipoSano` |
+| **Reportes CSV + SP** | 4 reportes descargables en CSV incluyendo consumo del SP `sp_ReporteConsumoRepuestosPorPeriodo`. | `ServicioReportes` + `ReportesController` | `ReportesController.DescargarCsv` (`FileResult`) + `Views/Reportes/Index.cshtml` | `GenerarCsvConsumoRepuestosAsync_DatosValidos_GeneraCsvConEncabezadosYFilas` |
+| **Tablero Dinámico** | Indicadores KPI con actualización asíncrona vía `JsonResult` y vista parcial. | `TableroController` + `ServicioTablero` | `TableroController.MetricasJson` / `ResumenParcial` + `Views/Home/Index.cshtml` | Endpoints integrados en `API` y `Web` |
 
-La cadena de conexión se administra localmente mediante **.NET User Secrets** (asociado al UserSecretsId configurado en `API.csproj`):
+---
 
-### Configuración de la Conexión Local
+## 5. Aplicación de Principios SOLID
 
-Ejecuta el siguiente comando en la raíz del repositorio o dentro de la carpeta `MantenimientoApi`:
+1. **S — Single Responsibility Principle (Responsabilidad Única):** Cada servicio de la capa `Flujo` (`ServicioEquipo`, `ServicioRepuesto`, `ServicioOrdenDeTrabajo`, `ServicioFalla`, `ServicioPrediccionFalla`, `ServicioReportes`, `ServicioUsuario`, `AuthServicio`) encapsula un único subdominio de negocio, separando la persistencia (`DA/Repositorios`), el transporte HTTP (`API/Controllers`) y el manejo transversal de errores (`ManejadorExcepcionesGlobal`).
+2. **O — Open/Closed Principle (Abierto/Cerrado):** El pipeline de errores basado en `IExceptionHandler` y la jerarquía `ExcepcionBase` (`ReglaNegocioException`, `NoEncontradoException`, `ConflictoException`, `NoAutorizadoException`) permiten incorporar nuevas reglas o excepciones de dominio sin modificar el middleware HTTP.
+3. **L — Liskov Substitution Principle (Sustitución de Liskov):** Todos los clientes HTTP en `Web-Mantenimiento` heredan de `ApiClientBase` y las implementaciones de repositorios cumplen estrictamente sus contratos en `Abstracciones/Interfaces/DA`, pudiendo sustituirse de forma transparente por dobles de prueba en memoria.
+4. **I — Interface Segregation Principle (Segregación de Interfaces):** En lugar de un repositorio genérico monolítico, los contratos están segregados según las capacidades de cada entidad (por ejemplo, `IRepositorioBitacoraOrden` solo declara `ObtenerHistorialPorOrdenAsync` y `RegistrarAsync`, impidiendo por compilación cualquier intento de actualizar o eliminar registros de auditoría).
+5. **D — Dependency Inversion Principle (Inversión de Dependencias):** Los controladores dependen exclusivamente de abstracciones de `Flujo` (`IServicio*`), y los servicios de `Flujo` dependen de abstracciones de `DA` (`IRepositorio*`) y `IOptions<ReglasNegocioOptions>`.
 
+---
+
+## 6. Configuración Local (Base de Datos y User Secrets)
+
+### 6.1. Configurar Secretos Locales (`MantenimientoApi`)
 ```bash
-# Para SQL Server LocalDB (entornos de desarrollo estándar):
 dotnet user-secrets set "ConnectionStrings:Default" "Server=(localdb)\mssqllocaldb;Database=MantenimientoEquiposDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True" --project MantenimientoApi/API/API.csproj
-
-# Para SQL Server Express:
-dotnet user-secrets set "ConnectionStrings:Default" "Server=.\SQLEXPRESS;Database=MantenimientoEquiposDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True" --project MantenimientoApi/API/API.csproj
 ```
 
----
-
-## 5. Aplicación de Migraciones y Semilla
-
-Una vez configurada la cadena en User Secrets, aplica la migración inicial contra tu servidor SQL Server:
-
+### 6.2. Aplicar Migraciones y Semilla en SQL Server Local
 ```bash
 dotnet ef database update --project MantenimientoApi/DA/DA.csproj --startup-project MantenimientoApi/API/API.csproj
 ```
 
-Al ejecutarse, EF Core creará la base de datos `MantenimientoEquiposDb`, aplicará las restricciones de clave primaria y foránea en 3FN, registrará el Stored Procedure y poblará la semilla inicial (32 órdenes de trabajo, 6 equipos, 7 repuestos y 10 usuarios).
+### 6.3. Usuarios de Prueba (Semilla en `MantenimientoSeedData.cs`)
 
----
-
-## 6. Usuarios de Prueba (Semilla Inicial)
-
-Las contraseñas se encuentran cifradas con **PBKDF2 con HMAC-SHA256 (100,000 iteraciones y salt criptográfico de 128 bits)**:
-
-| Identificación | Nombre Completo | Rol | Correo Electrónico | Contraseña de Prueba |
+| Identificación | Nombre Completo | Rol | Correo Electrónico | Contraseña |
 | :--- | :--- | :--- | :--- | :--- |
-| `109990888` | Carlos Alvarado Mora | Administrador | `calvarado@mantenimiento.cr` | `Admin123*` |
-| `111110222` | Laura Rojas Jiménez | Administrador | `lrojas@mantenimiento.cr` | `Admin123*` |
-| `203330444` | Andrés Chaves Solís | Técnico (Mecánica) | `achaves@mantenimiento.cr` | `Tecnico123*` |
-| `304440555` | Mariana Gómez Castro | Técnico (Electrónica) | `mgomez@mantenimiento.cr` | `Tecnico123*` |
-| `405550666` | Javier Vargas Mora | Técnico (Refrigeración) | `jvargas@mantenimiento.cr` | `Tecnico123*` |
-| `506660777` | Sofía Morales Soto | Técnico (Biomédica) | `smorales@mantenimiento.cr` | `Tecnico123*` |
-| `607770888` | Roberto Jiménez Vega | Técnico (Hidráulica) | `rjimenez@mantenimiento.cr` | `Tecnico123*` |
-| `112340567` | Juan Pérez Solano | Solicitante (Producción) | `jperez@mantenimiento.cr` | `Usuario123*` |
-| `203450678` | Ana Castillo Blanco | Solicitante (Control Calidad) | `acastillo@mantenimiento.cr` | `Usuario123*` |
-| `304560789` | Diego Monge Arias | Solicitante (Laboratorio) | `dmonge@mantenimiento.cr` | `Usuario123*` |
+| `USR-001` | Carlos Mora Soto | **Administrador** | `admin@mantenimiento.com` | `Admin123!` |
+| `USR-002` | Elena Vargas Castro | **Supervisor** | `supervisor@mantenimiento.com` | `Super123!` |
+| `USR-003` | Javier Rojas Méndez | **Tecnico** | `tecnico1@mantenimiento.com` | `Tecnico123!` |
+| `USR-004` | Andrés Navarro Pérez | **Tecnico** | `tecnico2@mantenimiento.com` | `Tecnico123!` |
+| `USR-005` | María Solano Chaves | **Solicitante** | `solicitante@mantenimiento.com` | `Solicitante123!` |
+| `USR-006` | Roberto Gómez Alvarado | **Solicitante** | `solicitante2@mantenimiento.com` | `Solicitante123!` |
 
 ---
 
-## 7. Ejecución y Pruebas
+## 7. Compilación, Ejecución y Pruebas
 
-### Compilación Completa (0 advertencias, 0 errores)
 ```bash
-dotnet build MantenimientoApi/MantenimientoApi.slnx
-```
+# 1. Compilar Backend (API + Capas + Tests)
+dotnet build MantenimientoApi/MantenimientoApi.slnx --configuration Release
 
-### Ejecución de Pruebas Unitarias
-```bash
-dotnet test MantenimientoApi/MantenimientoApi.slnx
-```
+# 2. Compilar Frontend MVC (Web-Mantenimiento)
+dotnet build Web-Mantenimiento/Web-Mantenimiento.slnx --configuration Release
 
-### Ejecución del Servidor API
-```bash
+# 3. Ejecutar Suite Completa de Pruebas (30 pruebas: Unitarias + Integración)
+dotnet test MantenimientoApi/MantenimientoApi.slnx --configuration Release
+
+# 4. Iniciar API (puerto 5237 por defecto)
 dotnet run --project MantenimientoApi/API/API.csproj
+
+# 5. Iniciar Web MVC (en otra terminal)
+dotnet run --project Web-Mantenimiento/Web-Mantenimiento/Web-Mantenimiento.csproj
 ```
 
-Una vez en ejecución:
-- **Página de Estado (Landing)**: `http://localhost:5000/` o `https://localhost:7001/`
-- **Documentación Interactiva Scalar**: `http://localhost:5000/scalar/v1`
-- **Especificación OpenAPI**: `http://localhost:5000/openapi/v1.json`
-- **Diagnóstico de Salud**: `http://localhost:5000/api/salud`
-
 ---
 
-## 8. Módulos y Endpoints Principales
+## 8. Declaración de Uso de Inteligencia Artificial
 
-### 📦 Equipos (`/api/equipos`)
-- `GET /api/equipos`: Listado general con búsqueda, ordenamiento y encabezado de paginación `X-Pagination`.
-- `GET /api/equipos/{codigoEquipo:codigoRuta}`: Detalle por código con soporte de caché `ETag` (HTTP 304).
-- `POST /api/equipos`: Registro de nuevo equipo validando código alfanumérico.
-- `PUT /api/equipos/{codigoEquipo:codigoRuta}`: Actualización de datos generales.
-- `DELETE /api/equipos/{codigoEquipo:codigoRuta}`: Eliminación condicionada a no tener órdenes asociadas.
+Durante el desarrollo del proyecto se emplearon herramientas de asistencia basadas en Inteligencia Artificial bajo supervisión técnica del equipo para:
+- **Generación de datos semilla (`MantenimientoSeedData.cs`):** Estructuración de las 32 órdenes de trabajo iniciales, bitácoras y catálogos paramétricos coherentes con el dominio industrial/hospitalario.
+- **Esqueleto de pruebas automatizadas (`Flujo.Tests`):** Asistencia en la redacción de casos de prueba unitarios con `xUnit` y `Moq` y pruebas de integración con `WebApplicationFactory`, validados y ajustados contra las reglas de negocio reales del sistema.
+- **Revisión de documentación técnica y formato Markdown/Mermaid:** Estructuración del diagrama ER, tabla de trazabilidad y registro de decisiones arquitectónicas (`DECISIONES.md`).
 
-### ⚙️ Repuestos (`/api/repuestos`)
-- `GET /api/repuestos`: Inventario completo con paginación `X-Pagination`.
-- `GET /api/repuestos/bajo-minimo`: Consulta de repuestos en nivel crítico de inventario (`stock <= mínimo`).
-- `GET /api/repuestos/{codigoRepuesto:codigoRuta}`: Detalle por código con validación `ETag`.
-- `POST /api/repuestos`: Registro de nuevo repuesto con validación de código.
-- `PUT /api/repuestos/{codigoRepuesto:codigoRuta}`: Actualización con validación de concurrencia optimista (`If-Match` / `RowVersion`).
-- `DELETE /api/repuestos/{codigoRepuesto:codigoRuta}`: Eliminación de repuesto si no posee consumo histórico.
-
-### 🛠️ Órdenes de Trabajo (`/api/ordenes`)
-- `GET /api/ordenes`: Listado de órdenes con filtros por equipo, técnico, solicitante, estado, prioridad y paginación.
-- `GET /api/ordenes/{numero}`: Consulta de orden por número con `ETag`.
-- `POST /api/ordenes`: Creación de orden calculando automáticamente fecha límite según prioridad (RN-08) y registrando bitácora inicial.
-- `PUT /api/ordenes/{numero}`: Actualización operativa (RN-09: inmutable si la orden está Cerrada).
-- `PUT /api/ordenes/{numero}/estado`: Máquina de estados estricta y registro inmutable en bitácora.
-- `POST /api/ordenes/{numero}/repuestos`: Asignación de repuestos deduciendo existencias de bodega (RN-05).
-- `GET /api/ordenes/{numero}/historial`: Historial cronológico de cambios de estado y bitácora.
-
-### 📊 Tablero de Control (Minimal APIs)
-- `GET /api/tablero/equipos-por-estado`: Conteo consolidado de equipos agrupados por estado.
-- `GET /api/tablero/ordenes-por-prioridad`: Distribución de órdenes por prioridad y conteo de órdenes activas.
-- `GET /api/tablero/repuestos-bajo-minimo`: Resumen de repuestos bajo stock mínimo con cálculo de déficit.
-- `GET /api/salud`: Verificación de operatividad del API y conectividad con la base de datos.
-
----
-
-## 9. Lista de Verificación — Avance 1 (Semana 7)
-
-- [x] **Arquitectura Limpia**: Separación estricta en 4 capas (`Abstracciones`, `DA`, `Flujo`, `API`).
-- [x] **Modelo Relacional en 3FN**: 13 tablas mapeadas mediante Fluent API según el diagrama entidad-relación del proyecto.
-- [x] **Concurrencia Optimista**: Tokens `ROW_VERSION` en `REPUESTO_TB` y `ORDEN_TB`.
-- [x] **Stored Procedure**: `sp_ReporteConsumoRepuestosPorPeriodo` integrado en migración y DbContext.
-- [x] **Semilla de Datos**: 32 órdenes, equipos, repuestos, catálogos y usuarios con contraseñas seguras PBKDF2.
-- [x] **Reglas de Negocio (RN-01 a RN-09)**: Máquina de estados, trazabilidad en bitácora inmutable, validaciones de cierre y stock.
-- [x] **CRUD Completo de 3 Entidades**: `Equipos`, `Repuestos` y `Órdenes de Trabajo`.
-- [x] **Estándar de Errores RFC 7807**: Respuestas de error estructuradas en `application/problem+json` vía `IExceptionHandler`.
-- [x] **Paginación y Caché HTTP**: Encabezados `X-Pagination`, `ETag` y respuestas `304 Not Modified`.
-- [x] **Documentación Scalar**: Explorador interactivo moderno en `/scalar/v1`.
-- [x] **Pruebas Unitarias**: 15 pruebas automatizadas pasando al 100% en verde con xUnit y Moq.
-- [x] **CI Automatizado**: Workflow de GitHub Actions (`ci.yml`) compilando y ejecutando pruebas en verde.
-- [x] **Gestión Segura de Secretos**: Sin credenciales en texto plano; documentación para User Secrets.
+Todo el código fuente, modelo relacional en 3FN, lógica de negocio, seguridad JWT y vistas Razor fueron revisados, probados y verificados localmente por los integrantes del equipo.

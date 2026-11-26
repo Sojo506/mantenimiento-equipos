@@ -13,8 +13,8 @@
             @Html.AntiForgeryToken()
             <input type="hidden" name="volver" value="BandejaSupervisor" />
             <button type="submit" class="btn btn-outline-danger"
-                    title="Escala críticas sin atender (RN-01) y genera órdenes de planes vencidos (RN-06). También corre solo cada pocos minutos.">
-                Ejecutar reglas RN-01 / RN-06
+                    title="Escala órdenes críticas sin atender y genera órdenes preventivas de planes vencidos.">
+                Procesar escalamientos y planes vencidos
             </button>
         </form>
         <a asp-action="Crear" class="btn btn-primary">Nueva orden</a>

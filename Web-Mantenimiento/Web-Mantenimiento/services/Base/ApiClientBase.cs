@@ -200,13 +200,13 @@ public abstract class ApiClientBase
             }
 
             if (raiz.TryGetProperty("detail", out var detail) && !string.IsNullOrWhiteSpace(detail.GetString()))
-                return detail.GetString()!;
+                return LimpiarMensajeRegla(detail.GetString()!);
 
             if (raiz.TryGetProperty("mensaje", out var mensaje) && !string.IsNullOrWhiteSpace(mensaje.GetString()))
-                return mensaje.GetString()!;
+                return LimpiarMensajeRegla(mensaje.GetString()!);
 
             if (raiz.TryGetProperty("title", out var title) && !string.IsNullOrWhiteSpace(title.GetString()))
-                return title.GetString()!;
+                return LimpiarMensajeRegla(title.GetString()!);
         }
         catch (JsonException)
         {
@@ -214,8 +214,11 @@ public abstract class ApiClientBase
         }
 
         if (resp.StatusCode == HttpStatusCode.Conflict)
-            return "Conflicto de concurrencia o estado (409). Recargue la información e intente nuevamente.";
+            return "Conflicto de concurrencia o estado. Recargue la información e intente nuevamente.";
 
         return $"Error en la API. Código HTTP: {(int)resp.StatusCode}.";
     }
+
+    private static string LimpiarMensajeRegla(string texto) =>
+        System.Text.RegularExpressions.Regex.Replace(texto, @"\s*\(RN-\d{2}\)", "");
 }

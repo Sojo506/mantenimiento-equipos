@@ -7,7 +7,7 @@
     <div>
         <h2 class="mb-0">Centro de Reportes y Exportación CSV</h2>
         <p class="text-muted mb-0">
-            Descarga de reportes gerenciales en formato CSV y consulta del Stored Procedure <code>sp_ReporteConsumoRepuestosPorPeriodo</code>.
+            Descarga de reportes gerenciales en formato CSV y consulta de consumo de repuestos por período.
         </p>
     </div>
 </div>
@@ -38,9 +38,9 @@
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column justify-content-between">
                 <div>
-                    <h6 class="fw-bold">1. Consumo de Repuestos (SP)</h6>
+                    <h6 class="fw-bold">1. Consumo de Repuestos</h6>
                     <p class="text-muted small">
-                        Ejecuta <code>sp_ReporteConsumoRepuestosPorPeriodo</code> con cantidades, costos acumulados y órdenes cerradas.
+                        Resumen por período con cantidades consumidas, costos acumulados y órdenes cerradas.
                     </p>
                 </div>
                 <a asp-action="DescargarCsv"
@@ -80,7 +80,7 @@
                 <div>
                     <h6 class="fw-bold">3. Equipos Críticos y Fallas</h6>
                     <p class="text-muted small">
-                        Consolidado del parque de equipos, reincidencia de fallas (RN-03), estado actual y horas acumuladas.
+                        Consolidado del parque de equipos, reincidencia de fallas, estado actual y horas acumuladas.
                     </p>
                 </div>
                 <a asp-action="DescargarCsv"
@@ -98,7 +98,7 @@
                 <div>
                     <h6 class="fw-bold">4. Productividad de Técnicos</h6>
                     <p class="text-muted small">
-                        Carga operativa por técnico (RN-07), órdenes en proceso, cerradas, especialidad y horas registradas.
+                        Carga operativa por técnico, órdenes en proceso, cerradas, especialidad y horas registradas.
                     </p>
                 </div>
                 <a asp-action="DescargarCsv"
@@ -113,7 +113,7 @@
 
 <div class="card shadow-sm">
     <div class="card-header fw-semibold">
-        Vista Previa — Consumo de Repuestos en el Período (<code>sp_ReporteConsumoRepuestosPorPeriodo</code>)
+        Vista Previa — Consumo de Repuestos en el Período
     </div>
     <div class="card-body">
         @if (Model.ConsumoRepuestos.Count == 0)

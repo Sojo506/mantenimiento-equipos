@@ -89,7 +89,7 @@ public class OrdenesController : Controller
         vm.Resumen = new List<BandejaResumenItem>
         {
             new() { Etiqueta = "Sin asignar", Cantidad = conteos[0], IdEstado = 7, Clase = "text-bg-warning" },
-            new() { Etiqueta = "Escaladas (RN-01)", Cantidad = conteos[1], IdEstado = 12, Clase = "text-bg-danger" },
+            new() { Etiqueta = "Escaladas", Cantidad = conteos[1], IdEstado = 12, Clase = "text-bg-danger" },
             new() { Etiqueta = "Vencidas", Cantidad = conteos[2], Vencidas = true, Clase = "text-bg-dark" },
             new() { Etiqueta = "En proceso", Cantidad = conteos[3], IdEstado = 9, Clase = "text-bg-info" },
             new() { Etiqueta = "Esperando repuesto", Cantidad = conteos[4], IdEstado = 10, Clase = "text-bg-secondary" }

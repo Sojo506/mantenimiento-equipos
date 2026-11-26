@@ -15,6 +15,9 @@
     static bool EsAutomatico(string comentario) =>
         comentario.Contains("(RN-01)") || comentario.Contains("(RN-06)");
 
+    static string LimpiarComentario(string comentario) =>
+        comentario.Replace(" (RN-01)", "").Replace(" (RN-06)", "");
+
     var duracionTotal = Model.Count > 1 ? Model[^1].Fecha - Model[0].Fecha : TimeSpan.Zero;
 }
 
@@ -81,7 +84,7 @@
                         <div class="small text-muted mb-1">
                             @(automatico ? "Sistema" : item.NombreUsuario) <span>(@item.Identificacion)</span>
                         </div>
-                        <div>@item.Comentario</div>
+                        <div>@LimpiarComentario(item.Comentario)</div>
                     </li>
                 }
             </ol>

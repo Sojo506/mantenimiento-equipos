@@ -141,8 +141,8 @@ public class PlanesController : Controller
         {
             static string Lista(List<int> n) => n.Count == 0 ? "" : $" (#{string.Join(", #", n)})";
             TempData["Mensaje"] =
-                $"Reglas ejecutadas: {resultado.OrdenesEscaladas} orden(es) escalada(s) por RN-01{Lista(resultado.NumerosOrdenesEscaladas)} " +
-                $"y {resultado.OrdenesPreventivasGeneradas} orden(es) preventiva(s) generada(s) por RN-06{Lista(resultado.NumerosOrdenesGeneradas)}.";
+                $"Proceso completado: {resultado.OrdenesEscaladas} orden(es) crítica(s) escalada(s){Lista(resultado.NumerosOrdenesEscaladas)} " +
+                $"y {resultado.OrdenesPreventivasGeneradas} orden(es) preventiva(s) generada(s){Lista(resultado.NumerosOrdenesGeneradas)}.";
         }
 
         return volver == "BandejaSupervisor"

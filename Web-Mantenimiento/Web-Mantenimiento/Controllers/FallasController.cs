@@ -52,7 +52,7 @@ public class FallasController : Controller
 
         if (creada.PasoAEnRiesgoAutomatico)
         {
-            TempData["Mensaje"] = $"Falla #{creada.Id} registrada (Orden #{creada.NumeroOrden}). Alerta RN-03: El equipo {creada.CodigoEquipo} pasó automáticamente al estado 'En Riesgo'.";
+            TempData["Mensaje"] = $"Falla #{creada.Id} registrada (Orden #{creada.NumeroOrden}). Alerta: El equipo {creada.CodigoEquipo} pasó automáticamente al estado 'En Riesgo' por reincidencia de fallas.";
         }
         else
         {

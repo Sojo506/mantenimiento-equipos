@@ -1,8 +1,10 @@
 ﻿
 @model Web_Mantenimiento.Models.Usuarios.ActualizarUsuarioViewModel
+@inject Web_Mantenimiento.Services.ApiCatalogoService Catalogos
 
 @{
     ViewData["Title"] = "Editar usuario";
+    var especialidades = await Catalogos.ObtenerEspecialidadesAsync();
 }
 
 <div class="mb-4">
@@ -59,8 +61,9 @@
 
                 <div class="col-md-6">
                     <label asp-for="IdEspecialidad" class="form-label">Especialidad</label>
-                    <input asp-for="IdEspecialidad" class="form-control"
-                           type="number" min="1" />
+                    <select asp-for="IdEspecialidad" asp-items="especialidades" class="form-select">
+                        <option value="">-- Ninguna / No aplica --</option>
+                    </select>
                     <span asp-validation-for="IdEspecialidad" class="text-danger"></span>
                 </div>
 

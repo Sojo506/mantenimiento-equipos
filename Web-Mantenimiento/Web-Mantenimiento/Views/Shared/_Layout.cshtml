@@ -4,6 +4,28 @@
     var nombre = Context.Session.GetString("Nombre");
     var rol = Context.Session.GetString("Rol");
     var autenticado = !string.IsNullOrWhiteSpace(token);
+    var ctrlActual = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var actionActual = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    string NavClase(string ctrl, string? action = null)
+    {
+        if (!string.Equals(ctrlActual, ctrl, StringComparison.OrdinalIgnoreCase))
+            return "nav-link";
+
+        if (action != null)
+            return string.Equals(actionActual, action, StringComparison.OrdinalIgnoreCase)
+                ? "nav-link active fw-semibold"
+                : "nav-link";
+
+        if (string.Equals(ctrl, "Ordenes", StringComparison.OrdinalIgnoreCase) &&
+            (string.Equals(actionActual, "BandejaTecnico", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(actionActual, "BandejaSupervisor", StringComparison.OrdinalIgnoreCase)))
+        {
+            return "nav-link";
+        }
+
+        return "nav-link active fw-semibold";
+    }
 }
 
 <!DOCTYPE html>
@@ -40,12 +62,12 @@
 
                         <ul class="navbar-nav me-auto">
                             <li class="nav-item">
-                                <a class="nav-link"
+                                <a class="@NavClase("Home")"
                                    asp-controller="Home"
                                    asp-action="Index">Inicio</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link"
+                                <a class="@NavClase("Equipos")"
                                    asp-controller="Equipos"
                                    asp-action="Index">Equipos</a>
                             </li>
@@ -53,20 +75,20 @@
                             @if (rol is "Administrador" or "Supervisor" or "Tecnico")
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link"
+                                    <a class="@NavClase("Repuestos")"
                                        asp-controller="Repuestos"
                                        asp-action="Index">Repuestos</a>
                                 </li>
                             }
 
                             <li class="nav-item">
-                                <a class="nav-link"
+                                <a class="@NavClase("Ordenes")"
                                    asp-controller="Ordenes"
                                    asp-action="Index">Órdenes</a>
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link"
+                                <a class="@NavClase("Fallas")"
                                    asp-controller="Fallas"
                                    asp-action="Index">@(rol == "Solicitante" ? "Reportar Falla" : "Fallas")</a>
                             </li>
@@ -74,7 +96,7 @@
                             @if (rol is "Tecnico" or "Administrador")
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link"
+                                    <a class="@NavClase("Ordenes", "BandejaTecnico")"
                                        asp-controller="Ordenes"
                                        asp-action="BandejaTecnico">Bandeja Técnico</a>
                                 </li>
@@ -83,17 +105,17 @@
                             @if (rol is "Supervisor" or "Administrador")
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link"
+                                    <a class="@NavClase("Ordenes", "BandejaSupervisor")"
                                        asp-controller="Ordenes"
                                        asp-action="BandejaSupervisor">Bandeja Supervisor</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link"
+                                    <a class="@NavClase("Planes")"
                                        asp-controller="Planes"
                                        asp-action="Index">Planes</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link"
+                                    <a class="@NavClase("Reportes")"
                                        asp-controller="Reportes"
                                        asp-action="Index">Reportes CSV</a>
                                 </li>
@@ -102,7 +124,7 @@
                             @if (rol == "Administrador")
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link"
+                                    <a class="@NavClase("Usuarios")"
                                        asp-controller="Usuarios"
                                        asp-action="Index">Usuarios</a>
                                 </li>
